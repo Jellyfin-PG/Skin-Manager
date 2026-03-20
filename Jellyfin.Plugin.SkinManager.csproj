@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <AssemblyName>Jellyfin.Plugin.SkinManager</AssemblyName>
+    <RootNamespace>Jellyfin.Plugin.SkinManager</RootNamespace>
+  
+    <Version>1.0.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+ 
+    <Authors>Jellyfin Plugin Group</Authors>
+    <RepositoryUrl>https://github.com/Jellyfin-PG/Skin-Manager</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Description>A theme store for Jellyfin. Browse and apply community CSS themes via the File Transformation plugin.</Description>
+    <Copyright>Copyright © 2026 Jellyfin Plugin Group</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Jellyfin.Controller" Version="10.11.0" />
+    <PackageReference Include="Jellyfin.Model" Version="10.11.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Configuration\configPage.html" />
+  </ItemGroup>
+
+</Project>

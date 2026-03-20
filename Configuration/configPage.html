@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Skin Manager</title>
+    <style>
+        .skinManagerPage .cardImageContainer {
+            height: 130px !important;
+            background-size: cover !important;
+            background-position: top center !important;
+        }
+
+        .skinManagerPage .card.selectedCard .cardBox {
+            outline: 3px solid #00a4dc;
+            outline-offset: -3px;
+            border-radius: 4px;
+        }
+
+        .skinManagerPage .activeBar {
+            display: flex;
+            align-items: center;
+            gap: .75em;
+            padding: .6em 1em;
+            background: rgba(0, 164, 220, .1);
+            border: 1px solid rgba(0, 164, 220, .3);
+            border-radius: 4px;
+            margin-bottom: 1em;
+            font-size: .9em;
+        }
+
+        .skinManagerPage .activeDot {
+            width: 8px;
+            height: 8px;
+            background: #00e676;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .skinManagerPage .stateMsg {
+            padding: 3em 1em;
+            text-align: center;
+            opacity: .45;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="SkinManagerConfigurationPage" data-role="page"
+        class="page type-interior pluginConfigurationPage skinManagerConfigurationPage skinManagerPage"
+        data-require="emby-input,emby-button,emby-select">
+
+        <div data-role="content">
+            <div class="content-primary">
+
+                <h2>Skin Manager</h2>
+
+                <div class="activeBar" id="activeBar" style="display:none">
+                    <div class="activeDot"></div>
+                    <span>Active: <strong id="activeName"></strong></span>
+                    <button is="emby-button" type="button" id="btnRemove" class="emby-button" style="margin-left:auto">
+                        Remove
+                    </button>
+                </div>
+
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="repoUrl">Theme Repository URL</label>
+                    <input type="url" id="repoUrl" class="emby-input"
+                        placeholder="https://raw.githubusercontent.com/…/skins.json" />
+                </div>
+                <div style="margin-bottom:1.5em">
+                    <button is="emby-button" type="button" id="btnLoad" class="raised emby-button">
+                        Load Themes
+                    </button>
+                </div>
+
+                <div class="inputContainer" style="margin-bottom:.25em">
+                    <label class="inputLabel inputLabelUnfocused" for="searchInput">Search</label>
+                    <input type="text" id="searchInput" class="emby-input" placeholder="Search themes…" />
+                </div>
+
+                <div id="tagFilters" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;margin-bottom:16px;">
+                </div>
+
+                <div id="themeGrid" class="itemsContainer vertical-wrap">
+                    <div class="stateMsg">
+                        Enter a repository URL above and click <strong>Load Themes</strong>.
+                    </div>
+                </div>
+
+                <div style="margin-top:1.5em;display:flex;align-items:center;gap:1em;flex-wrap:wrap">
+                    <span id="pendingLabel" style="font-size:.85em;opacity:.6">No pending changes</span>
+                    <button is="emby-button" type="button" id="btnSave" class="raised button-submit emby-button"
+                        disabled>
+                        Save &amp; Apply
+                    </button>
+                </div>
+                <p style="font-size:.8em;opacity:.45;margin-top:.75em">
+                    After saving, hard-refresh with <strong>Ctrl+Shift+R</strong> to see the theme.
+                </p>
+
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            (function () {
+                var PLUGIN_ID = 'e10fb9d4-c941-4c6e-8260-2641031c2618';
+                var DEFAULT_REPO = 'https://raw.githubusercontent.com/YOUR_USERNAME/jellyfin-skin-manager-themes/main/skins.json';
+
+                var state = {
+                    themes: [], selected: null, active: null,
+                    config: {}, activeTags: [], query: ''
+                };
+
+                function el(id) { return document.getElementById(id); }
+
+                function loadConfig() {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(PLUGIN_ID).then(function (cfg) {
+                        state.config = cfg;
+                        el('repoUrl').value = cfg.SkinUrl || DEFAULT_REPO;
+                        if (cfg.Skin && cfg.Skin !== 'Default' && cfg.Skin !== '') {
+                            state.active = { name: cfg.Skin, cssUrl: cfg.SelectedCssUrl || '' };
+                            el('activeName').textContent = cfg.Skin;
+                            el('activeBar').style.display = 'flex';
+                        }
+                        Dashboard.hideLoadingMsg();
+                        updatePending();
+                        var url = el('repoUrl').value.trim();
+                        if (url) loadThemes(url);
+                    });
+                }
+
+                function saveConfig(cfg) {
+                    ApiClient.updatePluginConfiguration(PLUGIN_ID, cfg).then(function (result) {
+                        Dashboard.processPluginConfigurationUpdateResult(result);
+                    });
+                }
+
+                function loadThemes(url) {
+                    el('themeGrid').innerHTML = '<div class="stateMsg">⏳ Loading themes…</div>';
+                    el('tagFilters').innerHTML = '';
+                    fetch(url)
+                        .then(function (r) {
+                            if (!r.ok) throw new Error('HTTP ' + r.status);
+                            return r.json();
+                        })
+                        .then(function (themes) {
+                            state.themes = themes;
+                            buildTags(themes);
+                            render();
+                        })
+                        .catch(function (err) {
+                            el('themeGrid').innerHTML =
+                                '<div class="stateMsg">❌ Could not load: ' + err.message + '</div>';
+                        });
+                }
+
+                var STYLE_TAG_OFF = 'display:inline-block;padding:5px 14px;border-radius:999px;border:1px solid rgba(255,255,255,0.28);background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.7);font-size:12px;line-height:1.4;cursor:pointer;user-select:none;box-sizing:border-box;';
+                var STYLE_TAG_ON = 'display:inline-block;padding:5px 14px;border-radius:999px;border:1px solid #00a4dc;background:#00a4dc;color:#fff;font-size:12px;line-height:1.4;cursor:pointer;user-select:none;box-sizing:border-box;font-weight:700;';
+
+                function buildTags(themes) {
+                    var set = {};
+                    themes.forEach(function (t) {
+                        (t.tags || []).forEach(function (g) { set[g] = true; });
+                    });
+                    state.activeTags = [];
+                    var c = el('tagFilters');
+                    c.innerHTML = '';
+                    Object.keys(set).sort().forEach(function (tag) {
+                        var b = document.createElement('span');
+                        b.setAttribute('style', STYLE_TAG_OFF);
+                        b.textContent = tag;
+                        b.addEventListener('click', function () {
+                            var i = state.activeTags.indexOf(tag);
+                            if (i === -1) {
+                                state.activeTags.push(tag);
+                                b.setAttribute('style', STYLE_TAG_ON);
+                            } else {
+                                state.activeTags.splice(i, 1);
+                                b.setAttribute('style', STYLE_TAG_OFF);
+                            }
+                            render();
+                        });
+                        c.appendChild(b);
+                    });
+                }
+
+                function render() {
+                    var q = state.query.toLowerCase();
+                    var filtered = state.themes.filter(function (t) {
+                        var mq = !q ||
+                            (t.name || '').toLowerCase().includes(q) ||
+                            (t.author || '').toLowerCase().includes(q) ||
+                            (t.description || '').toLowerCase().includes(q);
+                        var mt = state.activeTags.length === 0 ||
+                            state.activeTags.every(function (tag) {
+                                return (t.tags || []).includes(tag);
+                            });
+                        return mq && mt;
+                    });
+
+                    var grid = el('themeGrid');
+                    if (filtered.length === 0) {
+                        grid.innerHTML = '<div class="stateMsg">No themes match your search.</div>';
+                        return;
+                    }
+
+                    grid.innerHTML = '';
+                    filtered.forEach(function (theme) {
+                        grid.appendChild(buildCard(theme));
+                    });
+                }
+
+                function buildCard(theme) {
+                    var isSel = state.selected && state.selected.name === theme.name;
+                    var isAct = state.active && state.active.name === theme.name;
+
+                    var card = document.createElement('div');
+                    card.className = 'card overflowBackdropCard' + (isSel ? ' selectedCard' : '');
+                    card.style.cssText = 'min-width:200px;max-width:260px;';
+
+                    var cardBox = document.createElement('div');
+                    cardBox.className = 'cardBox';
+
+                    var cardScalable = document.createElement('div');
+                    cardScalable.className = 'cardScalable';
+
+                    var cardPadder = document.createElement('div');
+                    cardPadder.className = 'cardPadder cardPadder-backdrop';
+
+                    var cardContent = document.createElement('div');
+                    cardContent.className = 'cardContent';
+
+                    var imgContainer = document.createElement('div');
+                    imgContainer.className = 'cardImageContainer coveredImage';
+                    if (theme.previewUrl) {
+                        imgContainer.style.backgroundImage = 'url("' + theme.previewUrl + '")';
+                    } else {
+                        imgContainer.style.display = 'flex';
+                        imgContainer.style.alignItems = 'center';
+                        imgContainer.style.justifyContent = 'center';
+                        imgContainer.style.fontSize = '2.5em';
+                        imgContainer.style.opacity = '.2';
+                        imgContainer.textContent = '🎨';
+                    }
+
+                    if (isSel) {
+                        var chk = document.createElement('div');
+                        chk.style.cssText = 'position:absolute;top:6px;right:6px;background:#00a4dc;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:bold;z-index:1;';
+                        chk.textContent = '✓';
+                        imgContainer.appendChild(chk);
+                    }
+
+                    cardContent.appendChild(imgContainer);
+                    cardPadder.appendChild(cardContent);
+                    cardScalable.appendChild(cardPadder);
+                    cardBox.appendChild(cardScalable);
+
+                    var footer = document.createElement('div');
+                    footer.className = 'cardFooter';
+
+                    var cardText = document.createElement('div');
+                    cardText.className = 'cardText';
+                    cardText.style.fontWeight = 'bold';
+                    cardText.textContent = theme.name + (isAct && !isSel ? ' ✓' : '');
+                    footer.appendChild(cardText);
+
+                    if (theme.author) {
+                        var authText = document.createElement('div');
+                        authText.className = 'cardText cardText-secondary';
+                        authText.textContent = 'by ' + theme.author;
+                        footer.appendChild(authText);
+                    }
+
+                    if (theme.description) {
+                        var descText = document.createElement('div');
+                        descText.className = 'cardText cardText-secondary';
+                        descText.style.cssText = 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:.8em;opacity:.7;margin-top:.2em';
+                        descText.textContent = theme.description;
+                        footer.appendChild(descText);
+                    }
+
+                    var btnRow = document.createElement('div');
+                    btnRow.style.cssText = 'display:flex;gap:.4em;margin-top:.6em;padding-bottom:.4em';
+
+                    var selBtn = document.createElement('button');
+                    selBtn.setAttribute('is', 'emby-button');
+                    selBtn.className = 'raised emby-button' + (isSel ? ' button-submit' : '');
+                    selBtn.style.cssText = 'flex:1;padding:.35em .5em;font-size:.78em';
+                    selBtn.textContent = isSel ? '✓ Selected' : 'Select';
+                    selBtn.disabled = isSel;
+                    selBtn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        pick(theme);
+                    });
+                    btnRow.appendChild(selBtn);
+
+                    if (theme.sourceUrl) {
+                        var srcBtn = document.createElement('a');
+                        srcBtn.className = 'emby-button';
+                        srcBtn.style.cssText = 'padding:.35em .6em;font-size:.78em;border:1px solid rgba(255,255,255,.2)';
+                        srcBtn.textContent = '↗';
+                        srcBtn.title = 'View source';
+                        srcBtn.href = theme.sourceUrl;
+                        srcBtn.target = '_blank';
+                        srcBtn.rel = 'noopener noreferrer';
+                        srcBtn.addEventListener('click', function (e) { e.stopPropagation(); });
+                        btnRow.appendChild(srcBtn);
+                    }
+
+                    footer.appendChild(btnRow);
+                    cardBox.appendChild(footer);
+                    card.appendChild(cardBox);
+
+                    card.addEventListener('click', function () { pick(theme); });
+                    return card;
+                }
+
+                function pick(theme) {
+                    state.selected = theme;
+                    updatePending();
+                    render();
+                    el('btnSave').disabled = false;
+                }
+
+                function updatePending() {
+                    var lbl = el('pendingLabel');
+                    if (state.selected) {
+                        lbl.textContent = 'Pending: ' + state.selected.name;
+                        lbl.style.color = '#00a4dc';
+                    } else if (state.active) {
+                        lbl.textContent = 'Active: ' + state.active.name;
+                        lbl.style.color = '';
+                    } else {
+                        lbl.textContent = 'No pending changes';
+                        lbl.style.color = '';
+                    }
+                }
+
+                function doSave() {
+                    if (!state.selected) return;
+                    var cfg = Object.assign({}, state.config, {
+                        SkinUrl: el('repoUrl').value.trim(),
+                        Skin: state.selected.name,
+                        SelectedCssUrl: state.selected.cssUrl || ''
+                    });
+                    el('btnSave').disabled = true;
+                    ApiClient.updatePluginConfiguration(PLUGIN_ID, cfg).then(function (result) {
+                        Dashboard.processPluginConfigurationUpdateResult(result);
+                        state.config = cfg;
+                        state.active = state.selected;
+                        state.selected = null;
+                        el('activeName').textContent = state.active.name;
+                        el('activeBar').style.display = state.active.cssUrl ? 'flex' : 'none';
+                        updatePending();
+                        render();
+                        window.top.location.reload();
+                    });
+                }
+
+                function doRemove() {
+                    var def = state.themes.find(function (t) { return !t.cssUrl; })
+                        || { name: 'Default', cssUrl: '' };
+                    pick(def);
+                    doSave();
+                }
+
+                document.querySelector('.skinManagerConfigurationPage')
+                    .addEventListener('pageshow', loadConfig);
+
+                el('btnLoad').addEventListener('click', function () {
+                    var url = el('repoUrl').value.trim();
+                    if (url) loadThemes(url);
+                });
+
+                el('searchInput').addEventListener('input', function () {
+                    state.query = this.value;
+                    render();
+                });
+
+                el('btnSave').addEventListener('click', doSave);
+                el('btnRemove').addEventListener('click', doRemove);
+
+            })();
+        </script>
+
+    </div>
+</body>
+
+</html>
