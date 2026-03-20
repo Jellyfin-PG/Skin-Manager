@@ -38,7 +38,7 @@ Navigate to **Dashboard > Skin Manager** in the sidebar. The default theme list 
 Themes are loaded from a separate JSON file hosted at:
 
 ```
-https://raw.githubusercontent.com/Jellyfin-PG/Skin-Manager-themes/refs/heads/main/skins.json
+https://raw.githubusercontent.com/Jellyfin-PG/Skin-Manager-Themes/refs/heads/main/skins.json
 ```
 
 This file is fetched live, so new themes appear without a plugin update. To submit a theme, open an issue using the **Theme Submission** template in the [theme repository](https://github.com/Jellyfin-PG/Skin-Manager-Themes).
