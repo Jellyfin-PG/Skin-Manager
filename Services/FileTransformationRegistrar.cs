@@ -1,11 +1,11 @@
 using System;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 
 namespace Jellyfin.Plugin.SkinManager.Services
 {
@@ -32,34 +32,64 @@ namespace Jellyfin.Plugin.SkinManager.Services
         {
             try
             {
-                var fileTransformationAssembly = AssemblyLoadContext.All
+                var ftAssembly = AssemblyLoadContext.All
                     .SelectMany(x => x.Assemblies)
                     .FirstOrDefault(x => x.FullName?.Contains(".FileTransformation") ?? false);
 
-                if (fileTransformationAssembly == null)
+                if (ftAssembly == null)
                 {
-                    _logger.LogWarning("[SkinManager] File Transformation plugin not found. Install it and restart Jellyfin.");
+                    _logger.LogWarning("[SkinManager] File Transformation plugin not found.");
                     return;
                 }
 
-                var pluginInterfaceType = fileTransformationAssembly.GetType("Jellyfin.Plugin.FileTransformation.PluginInterface");
+                var pluginInterfaceType = ftAssembly.GetType("Jellyfin.Plugin.FileTransformation.PluginInterface");
                 if (pluginInterfaceType == null)
                 {
                     _logger.LogWarning("[SkinManager] Could not find PluginInterface in File Transformation assembly.");
                     return;
                 }
 
-                var payload = new JObject
+                var newtonsoftAssembly = AssemblyLoadContext.All
+                    .SelectMany(x => x.Assemblies)
+                    .FirstOrDefault(x => x.GetName().Name == "Newtonsoft.Json"
+                                      && x != typeof(FileTransformationRegistrar).Assembly);
+
+                if (newtonsoftAssembly == null)
                 {
-                    { "id",               TransformationId.ToString() },
-                    { "fileNamePattern",  "index.html" },
-                    { "callbackAssembly", typeof(SkinInjector).Assembly.FullName },
-                    { "callbackClass",    typeof(SkinInjector).FullName },
-                    { "callbackMethod",   nameof(SkinInjector.InjectTheme) }
-                };
+                    newtonsoftAssembly = AssemblyLoadContext.All
+                        .SelectMany(x => x.Assemblies)
+                        .FirstOrDefault(x => x.GetName().Name == "Newtonsoft.Json");
+                }
+
+                if (newtonsoftAssembly == null)
+                {
+                    _logger.LogWarning("[SkinManager] Could not find Newtonsoft.Json assembly.");
+                    return;
+                }
+
+                var jobjectType = newtonsoftAssembly.GetType("Newtonsoft.Json.Linq.JObject");
+                var payload = Activator.CreateInstance(jobjectType);
+
+                var jtokenType = newtonsoftAssembly.GetType("Newtonsoft.Json.Linq.JToken");
+                var fromObject = jtokenType.GetMethod("FromObject", new[] { typeof(object) });
+
+                var indexerSetter = jobjectType.GetProperty("Item", new[] { typeof(string) })
+                                               ?.GetSetMethod();
+
+                void Set(string key, object value)
+                {
+                    var token = fromObject.Invoke(null, new[] { value });
+                    indexerSetter.Invoke(payload, new[] { key, token });
+                }
+
+                Set("id", TransformationId.ToString());
+                Set("fileNamePattern", "index.html");
+                Set("callbackAssembly", typeof(SkinInjector).Assembly.FullName);
+                Set("callbackClass", typeof(SkinInjector).FullName);
+                Set("callbackMethod", nameof(SkinInjector.InjectTheme));
 
                 pluginInterfaceType.GetMethod("RegisterTransformation")
-                    ?.Invoke(null, new object[] { payload });
+                    ?.Invoke(null, new[] { payload });
 
                 _logger.LogInformation("[SkinManager] Successfully registered CSS injection with File Transformation.");
             }
