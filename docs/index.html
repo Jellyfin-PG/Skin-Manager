@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Skin Manager</title>
+    <meta name="description" content="A theme store for Jellyfin. One click, no file editing." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@400;500&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --accent: #00a4dc;
+            --bg: #0c0e11;
+            --surface: rgba(255, 255, 255, 0.04);
+            --border: rgba(255, 255, 255, 0.08);
+            --text: #e2e5ea;
+            --muted: rgba(226, 229, 234, 0.45);
+            --serif: 'Instrument Serif', Georgia, serif;
+            --mono: 'Geist Mono', 'Courier New', monospace;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--mono);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px 24px;
+            text-align: center;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+            background-size: 48px 48px;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 70% at 50% 50%, transparent 30%, var(--bg) 100%);
+            pointer-events: none;
+        }
+
+        .card {
+            position: relative;
+            max-width: 480px;
+            width: 100%;
+            background: rgba(13, 15, 19, 0.85);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 52px 44px 44px;
+            backdrop-filter: blur(24px);
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04) inset, 0 32px 80px rgba(0, 0, 0, 0.5);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: 20%;
+            right: 20%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        .eyebrow {
+            font-size: 10px;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-family: var(--serif);
+            font-size: 42px;
+            line-height: 1.08;
+            color: #fff;
+            letter-spacing: -0.01em;
+        }
+
+        h1 em {
+            font-style: italic;
+            color: var(--accent);
+        }
+
+        .sub {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.7;
+            margin-top: 16px;
+            margin-bottom: 36px;
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 13px 20px;
+            border-radius: 8px;
+            font-family: var(--mono);
+            font-size: 13px;
+            text-decoration: none;
+            transition: opacity 0.15s, transform 0.12s;
+            border: none;
+        }
+
+        .btn:hover {
+            opacity: 0.82;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #000;
+            font-weight: 500;
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .meta {
+            margin-top: 28px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .meta a {
+            font-size: 11px;
+            letter-spacing: 0.04em;
+            color: var(--muted);
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+
+        .meta a:hover {
+            color: var(--text);
+        }
+
+        .meta span {
+            color: var(--border);
+        }
+
+        .req {
+            margin-top: 16px;
+            font-size: 10px;
+            letter-spacing: 0.04em;
+            color: rgba(226, 229, 234, 0.22);
+        }
+
+        .req a {
+            color: rgba(255, 193, 7, 0.45);
+            text-decoration: none;
+        }
+
+        .req a:hover {
+            color: #ffc107;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <p class="eyebrow">Jellyfin Plugin</p>
+        <h1>Skin<br /><em>Manager</em></h1>
+        <p class="sub">A theme store for your Jellyfin server.<br />Browse, pick, apply. No file editing.</p>
+        <div class="actions">
+            <a href="https://github.com/Jellyfin-PG/Skin-Manager#installation" class="btn btn-primary">
+                Get started →
+            </a>
+            <a href="https://github.com/Jellyfin-PG/Skin-Manager" class="btn btn-secondary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+                </svg>
+                View on GitHub
+            </a>
+        </div>
+        <div class="meta">
+            <a href="https://github.com/Jellyfin-PG/Skin-Manager-themes">Themes</a>
+            <span>·</span>
+            <a href="https://github.com/Jellyfin-PG/Skin-Manager/releases">Releases</a>
+            <span>·</span>
+            <a href="https://github.com/Jellyfin-PG/Skin-Manager/issues">Issues</a>
+        </div>
+        <p class="req">Requires <a href="https://github.com/IAmParadox27/jellyfin-plugin-file-transformation"
+                target="_blank">File Transformation</a> · Jellyfin 10.11+</p>
+    </div>
+</body>
+
+</html>
