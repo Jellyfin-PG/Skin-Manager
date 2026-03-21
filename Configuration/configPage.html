@@ -109,7 +109,7 @@
                 var state = {
                     themes: [], selected: null, active: null,
                     config: {}, activeTags: [], query: '',
-                    themeVars: {}, pendingVars: null
+                    themeVars: {}, pendingVars: null, pendingHasAddons: false
                 };
 
                 function el(id) { return document.getElementById(id); }
@@ -126,7 +126,7 @@
                         state.themeVars = safeParseJson(cfg.ThemeVars, {});
                         state.pendingVars = null;
                         if (cfg.Skin && cfg.Skin !== 'Default' && cfg.Skin !== '') {
-                            state.active = { name: cfg.Skin, cssUrl: cfg.SelectedCssUrl || '' };
+                            state.active = { name: cfg.Skin, cssUrl: cfg.SelectedCssUrl || '', version: cfg.SelectedVersion || '' };
                             el('activeName').textContent = cfg.Skin;
                             el('activeBar').style.display = 'flex';
                         }
@@ -153,12 +153,16 @@
                         })
                         .then(function (themes) {
                             state.themes = themes;
+                            if (state.active && state.active.name) {
+                                var match = themes.find(function (t) { return t.name === state.active.name; });
+                                if (match) state.active = match;
+                            }
                             buildTags(themes);
                             render();
                         })
                         .catch(function (err) {
                             el('themeGrid').innerHTML =
-                                '<div class="stateMsg">❌ Could not load: ' + err.message + '</div>';
+                                '<div class="stateMsg">Could not load: ' + err.message + '</div>';
                         });
                 }
 
@@ -227,10 +231,11 @@
 
                     var card = document.createElement('div');
                     card.className = 'card overflowBackdropCard' + (isSel ? ' selectedCard' : '');
-                    card.style.cssText = 'min-width:200px;max-width:260px;';
+                    card.style.cssText = 'min-width:200px;max-width:260px;cursor:default;';
 
                     var cardBox = document.createElement('div');
                     cardBox.className = 'cardBox';
+                    cardBox.style.position = 'relative';
 
                     var cardScalable = document.createElement('div');
                     cardScalable.className = 'cardScalable';
@@ -259,17 +264,17 @@
                         imgContainer.textContent = '🎨';
                     }
 
-                    if (isSel) {
-                        var chk = document.createElement('div');
-                        chk.style.cssText = 'position:absolute;top:6px;right:6px;background:#00a4dc;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:bold;z-index:1;';
-                        chk.textContent = '✓';
-                        imgContainer.appendChild(chk);
-                    }
-
                     cardContent.appendChild(imgContainer);
                     cardPadder.appendChild(cardContent);
                     cardScalable.appendChild(cardPadder);
                     cardBox.appendChild(cardScalable);
+
+                    if (isSel) {
+                        var chk = document.createElement('div');
+                        chk.style.cssText = 'position:absolute;top:6px;right:6px;background:#00a4dc;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:bold;z-index:10;pointer-events:none;';
+                        chk.textContent = '✓';
+                        cardBox.appendChild(chk);
+                    }
 
                     var footer = document.createElement('div');
                     footer.className = 'cardFooter';
@@ -277,7 +282,7 @@
                     var cardText = document.createElement('div');
                     cardText.className = 'cardText';
                     cardText.style.fontWeight = 'bold';
-                    cardText.textContent = theme.name + (isAct && !isSel ? ' ✓' : '');
+                    cardText.textContent = theme.name;
                     footer.appendChild(cardText);
 
                     if (theme.author) {
@@ -304,8 +309,7 @@
                     selBtn.style.cssText = 'flex:1;padding:.35em .5em;font-size:.78em';
                     selBtn.textContent = isSel ? '✓ Selected' : 'Select';
                     selBtn.disabled = isSel;
-                    selBtn.addEventListener('click', function (e) {
-                        e.stopPropagation();
+                    selBtn.addEventListener('click', function () {
                         pick(theme);
                     });
                     btnRow.appendChild(selBtn);
@@ -317,7 +321,7 @@
                         cfgBtn.style.cssText = 'padding:.35em .6em;font-size:.78em;border:1px solid rgba(255,255,255,.2)';
                         cfgBtn.textContent = '⚙';
                         cfgBtn.title = 'Configure theme variables';
-                        cfgBtn.addEventListener('click', function (e) { e.stopPropagation(); openVarsModal(theme); });
+                        cfgBtn.addEventListener('click', function () { openVarsModal(theme); });
                         btnRow.appendChild(cfgBtn);
                     }
 
@@ -330,7 +334,7 @@
                         srcBtn.href = theme.sourceUrl;
                         srcBtn.target = '_blank';
                         srcBtn.rel = 'noopener noreferrer';
-                        srcBtn.addEventListener('click', function (e) { e.stopPropagation(); });
+
                         btnRow.appendChild(srcBtn);
                     }
 
@@ -338,12 +342,20 @@
                     cardBox.appendChild(footer);
                     card.appendChild(cardBox);
 
-                    card.addEventListener('click', function () { pick(theme); });
                     return card;
                 }
 
                 function pick(theme) {
                     state.selected = theme;
+                    state.pendingHasAddons = false;
+                    if (theme.cssUrl) {
+                        fetch(theme.cssUrl)
+                            .then(function (r) { return r.text(); })
+                            .then(function (text) {
+                                state.pendingHasAddons = /@sm-import-if/.test(text);
+                            })
+                            .catch(function () { });
+                    }
                     updatePending();
                     render();
                     el('btnSave').disabled = false;
@@ -377,7 +389,8 @@
                         Skin: theme.name,
                         SelectedCssUrl: theme.cssUrl || '',
                         SelectedVersion: theme.version || '',
-                        ThemeVars: JSON.stringify(vars)
+                        ThemeVars: JSON.stringify(vars),
+                        HasConditionalImports: state.pendingHasAddons || false
                     });
                     el('btnSave').disabled = true;
                     ApiClient.updatePluginConfiguration(PLUGIN_ID, cfg).then(function (result) {
@@ -393,7 +406,7 @@
                         el('activeBar').style.display = (state.active && state.active.cssUrl) ? 'flex' : 'none';
                         updatePending();
                         render();
-                        window.top.location.reload();
+                        setTimeout(function () { window.top.location.reload(); }, 500);
                     });
                 }
 
