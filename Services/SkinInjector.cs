@@ -78,10 +78,21 @@ namespace Jellyfin.Plugin.SkinManager.Services
                     "    function injectCss(code) {\n" +
                     "        var existing = document.getElementById('skinmanager-theme');\n" +
                     "        if (existing) existing.remove();\n" +
-                    "        var s = document.createElement('style');\n" +
-                    "        s.id = 'skinmanager-theme';\n" +
-                    "        s.textContent = substituteVars(code, vars) + varBlock;\n" +
-                    "        document.head.appendChild(s);\n" +
+                    "        var css = substituteVars(code, vars) + varBlock;\n" +
+                    "        try {\n" +
+                    "            var blob = new Blob([css], { type: 'text/css' });\n" +
+                    "            var url  = URL.createObjectURL(blob);\n" +
+                    "            var link = document.createElement('link');\n" +
+                    "            link.rel  = 'stylesheet';\n" +
+                    "            link.id   = 'skinmanager-theme';\n" +
+                    "            link.href = url;\n" +
+                    "            document.head.appendChild(link);\n" +
+                    "        } catch(e) {\n" +
+                    "            var s = document.createElement('style');\n" +
+                    "            s.id = 'skinmanager-theme';\n" +
+                    "            s.textContent = css;\n" +
+                    "            document.head.appendChild(s);\n" +
+                    "        }\n" +
                     "    }\n" +
                     "\n" +
                     "    fetch(cssUrl)\n" +

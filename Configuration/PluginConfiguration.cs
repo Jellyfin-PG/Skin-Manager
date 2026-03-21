@@ -5,6 +5,13 @@ namespace Jellyfin.Plugin.SkinManager.Configuration
     public class PluginConfiguration : BasePluginConfiguration
     {
         /// <summary>
+        /// Tracks the config schema version. Incremented whenever new fields
+        /// are added so the migration block in Plugin.cs can apply defaults
+        /// safely without wiping the existing config.
+        /// </summary>
+        public int ConfigVersion { get; set; } = 0;
+
+        /// <summary>
         /// URL pointing to the skins repository JSON file.
         /// </summary>
         public string SkinUrl { get; set; } = "https://raw.githubusercontent.com/Jellyfin-PG/Skin-Manager-Themes/refs/heads/main/skins.json";
@@ -29,8 +36,9 @@ namespace Jellyfin.Plugin.SkinManager.Configuration
         /// <summary>
         /// Variable values for the currently active theme, serialized as JSON.
         /// Structure: { "VAR_KEY": "value", ... }
-        /// Injected as a :root { --var-key: value; } block before the theme @import.
+        /// Injected as a :root { --var-key: value; } block after the fetched CSS.
         /// The theme CSS file should reference var(--var-key) for configurable values.
+        /// Added in config version 2.
         /// </summary>
         public string ThemeVars { get; set; } = "{}";
     }
