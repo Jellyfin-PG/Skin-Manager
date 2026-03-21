@@ -60,19 +60,104 @@ namespace Jellyfin.Plugin.SkinManager.Services
                 string varBlock = BuildCssVarBlock(config.ThemeVars);
                 string varJson = BuildVarsJson(config.ThemeVars);
                 string escapedUrl = EscapeJs(config.SelectedCssUrl);
+                string escapedVer = EscapeJs(config.SelectedVersion ?? string.Empty);
 
                 result +=
                     "<script id=\"skinmanager-loader\">\n" +
                     "(function() {\n" +
-                    "    var cssUrl  = \"" + escapedUrl + "\";\n" +
-                    "    var varBlock = \"" + EscapeJs(varBlock) + "\";\n" +
-                    "    var vars    = " + varJson + ";\n" +
+                    "    var cssUrl      = \"" + escapedUrl + "\";\n" +
+                    "    var repoUrl     = \"" + EscapeJs(config.SkinUrl) + "\";\n" +
+                    "    var themeName   = \"" + EscapeJs(config.Skin) + "\";\n" +
+                    "    var themeVer    = \"" + escapedVer + "\";\n" +
+                    "    var varBlock    = \"" + EscapeJs(varBlock) + "\";\n" +
+                    "    var vars        = " + varJson + ";\n" +
+                    "    var pluginId    = \"e10fb9d4-c941-4c6e-8260-2641031c2618\";\n" +
+                    "    var CACHE_CSS   = 'skinmanager-v' + (themeVer || '0');\n" +
+                    "    var CACHE_META  = 'skinmanager-meta';\n" +
                     "\n" +
                     "    function substituteVars(code, v) {\n" +
                     "        Object.keys(v).forEach(function(key) {\n" +
-                    "            code = code.split('{{' + key + '}}').join(v[key]);\n" +
+                    "            code = code.split('{{{' + key + '}}}').join(v[key]);\n" +
                     "        });\n" +
                     "        return code;\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    function resolveConditionalImports(code) {\n" +
+                    "        var pattern = /\\/\\*\\s*@sm-import-if\\s+(\\S+)\\s+(\\S+)\\s*\\*\\//g;\n" +
+                    "        var promises = [];\n" +
+                    "        var match;\n" +
+                    "        while ((match = pattern.exec(code)) !== null) {\n" +
+                    "            (function(key, url) {\n" +
+                    "                var enabled = vars[key];\n" +
+                    "                if (enabled === 'true' || enabled === true) {\n" +
+                    "                    promises.push(cachedFetch(url, CACHE_CSS));\n" +
+                    "                } else {\n" +
+                    "                    promises.push(Promise.resolve(''));\n" +
+                    "                }\n" +
+                    "            })(match[1], match[2]);\n" +
+                    "        }\n" +
+                    "        var stripped = code.replace(/\\/\\*\\s*@sm-import-if\\s+\\S+\\s+\\S+\\s*\\*\\//g, '');\n" +
+                    "        return Promise.all(promises).then(function(addons) {\n" +
+                    "            return stripped + '\\n' + addons.join('\\n');\n" +
+                    "        });\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    // Generic stale-while-revalidate fetch backed by Cache API\n" +
+                    "    function cachedFetch(url, cacheName) {\n" +
+                    "        if (!window.caches) return fetch(url).then(function(r) { return r.text(); });\n" +
+                    "        return caches.open(cacheName).then(function(cache) {\n" +
+                    "            return cache.match(url).then(function(cached) {\n" +
+                    "                var networkFetch = fetch(url).then(function(r) {\n" +
+                    "                    cache.put(url, r.clone());\n" +
+                    "                    return r.text();\n" +
+                    "                }).catch(function() { return null; });\n" +
+                    "                if (cached) {\n" +
+                    "                    networkFetch.catch(function() {});\n" +
+                    "                    return cached.text();\n" +
+                    "                }\n" +
+                    "                return networkFetch.then(function(text) { return text || ''; });\n" +
+                    "            });\n" +
+                    "        });\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    // Check skins.json for a version bump on the active theme.\n" +
+                    "    // If the version changed, update SelectedVersion in config and\n" +
+                    "    // evict the old CSS cache so the new version loads next page load.\n" +
+                    "    function checkForUpdate() {\n" +
+                    "        if (!repoUrl || !themeName) return;\n" +
+                    "        cachedFetch(repoUrl, CACHE_META).then(function(text) {\n" +
+                    "            var themes;\n" +
+                    "            try { themes = JSON.parse(text); } catch(e) { return; }\n" +
+                    "            var entry = themes.find(function(t) { return t.name === themeName; });\n" +
+                    "            if (!entry || !entry.version) return;\n" +
+                    "            if (entry.version !== themeVer) {\n" +
+                    "                console.log('[SkinManager] Theme update detected: ' + themeVer + ' -> ' + entry.version);\n" +
+                    "                // Evict old CSS cache\n" +
+                    "                if (window.caches) caches.delete(CACHE_CSS);\n" +
+                    "                // Update SelectedVersion and SelectedCssUrl in config silently\n" +
+                    "                ApiClient.getPluginConfiguration(pluginId).then(function(cfg) {\n" +
+                    "                    cfg.SelectedVersion = entry.version;\n" +
+                    "                    if (entry.cssUrl) cfg.SelectedCssUrl = entry.cssUrl;\n" +
+                    "                    return ApiClient.updatePluginConfiguration(pluginId, cfg);\n" +
+                    "                }).then(function() {\n" +
+                    "                    // Reload so the new version is fetched and injected\n" +
+                    "                    window.location.reload();\n" +
+                    "                }).catch(function(e) {\n" +
+                    "                    console.warn('[SkinManager] Failed to save update: ', e);\n" +
+                    "                });\n" +
+                    "            }\n" +
+                    "        }).catch(function() {});\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    // Evict CSS caches from old versions\n" +
+                    "    function evictOldCaches() {\n" +
+                    "        if (!window.caches) return;\n" +
+                    "        caches.keys().then(function(keys) {\n" +
+                    "            keys.forEach(function(key) {\n" +
+                    "                if (key.startsWith('skinmanager-v') && key !== CACHE_CSS)\n" +
+                    "                    caches.delete(key);\n" +
+                    "            });\n" +
+                    "        });\n" +
                     "    }\n" +
                     "\n" +
                     "    function injectCss(code) {\n" +
@@ -95,8 +180,10 @@ namespace Jellyfin.Plugin.SkinManager.Services
                     "        }\n" +
                     "    }\n" +
                     "\n" +
-                    "    fetch(cssUrl)\n" +
-                    "        .then(function(r) { return r.text(); })\n" +
+                    "    evictOldCaches();\n" +
+                    "    checkForUpdate();\n" +
+                    "    cachedFetch(cssUrl, CACHE_CSS)\n" +
+                    "        .then(function(code) { return resolveConditionalImports(code); })\n" +
                     "        .then(function(code) { injectCss(code); })\n" +
                     "        .catch(function(e) { console.warn('[SkinManager] Failed to load theme: ' + cssUrl, e); });\n" +
                     "})();\n" +

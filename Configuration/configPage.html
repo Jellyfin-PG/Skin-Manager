@@ -376,6 +376,7 @@
                         SkinUrl: el('repoUrl').value.trim(),
                         Skin: theme.name,
                         SelectedCssUrl: theme.cssUrl || '',
+                        SelectedVersion: theme.version || '',
                         ThemeVars: JSON.stringify(vars)
                     });
                     el('btnSave').disabled = true;
@@ -469,7 +470,6 @@
                     return wrap;
                 }
 
-                /* ── Theme vars modal ── */
                 function openVarsModal(theme) {
                     var vars = theme.vars || [];
                     var saved = state.pendingVars !== null ? state.pendingVars : state.themeVars;
