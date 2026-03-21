@@ -16,7 +16,7 @@ namespace Jellyfin.Plugin.SkinManager
         /// field is added to PluginConfiguration, then add a migration case
         /// in the switch block below to apply safe defaults for that version.
         /// </summary>
-        private const int CurrentConfigVersion = 3;
+        private const int CurrentConfigVersion = 4;
 
         public override string Name => "SkinManager";
 
@@ -64,6 +64,9 @@ namespace Jellyfin.Plugin.SkinManager
                     case 3:
                         if (string.IsNullOrWhiteSpace(Configuration.SelectedVersion))
                             Configuration.SelectedVersion = string.Empty;
+                        break;
+
+                    case 4:
                         break;
                 }
 

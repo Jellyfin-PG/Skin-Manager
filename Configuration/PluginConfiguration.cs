@@ -49,5 +49,12 @@ namespace Jellyfin.Plugin.SkinManager.Configuration
         /// Added in config version 2.
         /// </summary>
         public string ThemeVars { get; set; } = "{}";
+
+        /// <summary>
+        /// True if the selected theme CSS contains @sm-import-if addon comments.
+        /// Scanned once at save time so the injector never needs to fetch
+        /// CSS just to make a routing decision. Added in config version 4.
+        /// </summary>
+        public bool HasConditionalImports { get; set; } = false;
     }
 }
