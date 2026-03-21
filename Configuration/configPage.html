@@ -54,6 +54,7 @@
 
                 <h2>Skin Manager</h2>
 
+
                 <div class="activeBar" id="activeBar" style="display:none">
                     <div class="activeDot"></div>
                     <span>Active: <strong id="activeName"></strong></span>
@@ -61,6 +62,7 @@
                         Remove
                     </button>
                 </div>
+
 
                 <div class="inputContainer">
                     <label class="inputLabel inputLabelUnfocused" for="repoUrl">Theme Repository URL</label>
@@ -73,19 +75,23 @@
                     </button>
                 </div>
 
+
                 <div class="inputContainer" style="margin-bottom:.25em">
                     <label class="inputLabel inputLabelUnfocused" for="searchInput">Search</label>
                     <input type="text" id="searchInput" class="emby-input" placeholder="Search themes…" />
                 </div>
 
+
                 <div id="tagFilters" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;margin-bottom:16px;">
                 </div>
+
 
                 <div id="themeGrid" class="itemsContainer vertical-wrap">
                     <div class="stateMsg">
                         Enter a repository URL above and click <strong>Load Themes</strong>.
                     </div>
                 </div>
+
 
                 <div style="margin-top:1.5em;display:flex;align-items:center;gap:1em;flex-wrap:wrap">
                     <span id="pendingLabel" style="font-size:.85em;opacity:.6">No pending changes</span>
@@ -118,6 +124,7 @@
                     try { return JSON.parse(str || '{}') || fallback; } catch (e) { return fallback; }
                 }
 
+
                 function loadConfig() {
                     Dashboard.showLoadingMsg();
                     ApiClient.getPluginConfiguration(PLUGIN_ID).then(function (cfg) {
@@ -143,8 +150,9 @@
                     });
                 }
 
+
                 function loadThemes(url) {
-                    el('themeGrid').innerHTML = '<div class="stateMsg">⏳ Loading themes…</div>';
+                    el('themeGrid').innerHTML = '<div class="stateMsg">Loading themes…</div>';
                     el('tagFilters').innerHTML = '';
                     fetch(url)
                         .then(function (r) {
@@ -153,6 +161,8 @@
                         })
                         .then(function (themes) {
                             state.themes = themes;
+
+
                             if (state.active && state.active.name) {
                                 var match = themes.find(function (t) { return t.name === state.active.name; });
                                 if (match) state.active = match;
@@ -168,6 +178,7 @@
 
                 var STYLE_TAG_OFF = 'display:inline-block;padding:5px 14px;border-radius:999px;border:1px solid rgba(255,255,255,0.28);background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.7);font-size:12px;line-height:1.4;cursor:pointer;user-select:none;box-sizing:border-box;';
                 var STYLE_TAG_ON = 'display:inline-block;padding:5px 14px;border-radius:999px;border:1px solid #00a4dc;background:#00a4dc;color:#fff;font-size:12px;line-height:1.4;cursor:pointer;user-select:none;box-sizing:border-box;font-weight:700;';
+
 
                 function buildTags(themes) {
                     var set = {};
@@ -196,6 +207,7 @@
                     });
                 }
 
+
                 function render() {
                     var q = state.query.toLowerCase();
                     var filtered = state.themes.filter(function (t) {
@@ -223,11 +235,15 @@
                 }
 
                 function buildCard(theme) {
+
+
+
                     var hasPending = state.selected !== null;
                     var isSel = hasPending
                         ? (state.selected && state.selected.name === theme.name)
                         : (state.active && state.active.name === theme.name);
                     var isAct = state.active && state.active.name === theme.name;
+
 
                     var card = document.createElement('div');
                     card.className = 'card overflowBackdropCard' + (isSel ? ' selectedCard' : '');
@@ -240,6 +256,7 @@
                     var cardScalable = document.createElement('div');
                     cardScalable.className = 'cardScalable';
 
+
                     var cardPadder = document.createElement('div');
                     cardPadder.className = 'cardPadder cardPadder-backdrop';
 
@@ -249,6 +266,8 @@
                     var imgContainer = document.createElement('div');
                     imgContainer.className = 'cardImageContainer coveredImage';
                     if (theme.previewUrl) {
+
+
                         var img = document.createElement('img');
                         img.src = theme.previewUrl;
                         img.alt = theme.name;
@@ -269,12 +288,15 @@
                     cardScalable.appendChild(cardPadder);
                     cardBox.appendChild(cardScalable);
 
+
+
                     if (isSel) {
                         var chk = document.createElement('div');
                         chk.style.cssText = 'position:absolute;top:6px;right:6px;background:#00a4dc;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:bold;z-index:10;pointer-events:none;';
                         chk.textContent = '✓';
                         cardBox.appendChild(chk);
                     }
+
 
                     var footer = document.createElement('div');
                     footer.className = 'cardFooter';
@@ -299,6 +321,7 @@
                         descText.textContent = theme.description;
                         footer.appendChild(descText);
                     }
+
 
                     var btnRow = document.createElement('div');
                     btnRow.style.cssText = 'display:flex;gap:.4em;margin-top:.6em;padding-bottom:.4em';
@@ -345,9 +368,12 @@
                     return card;
                 }
 
+
                 function pick(theme) {
                     state.selected = theme;
                     state.pendingHasAddons = false;
+
+
                     if (theme.cssUrl) {
                         fetch(theme.cssUrl)
                             .then(function (r) { return r.text(); })
@@ -379,7 +405,9 @@
                     }
                 }
 
+
                 function doSave() {
+
                     if (!state.selected && state.pendingVars === null) return;
                     var theme = state.selected || state.active;
                     if (!theme) return;
@@ -398,6 +426,7 @@
                         state.config = cfg;
                         state.themeVars = vars;
                         state.pendingVars = null;
+
                         if (state.selected) {
                             state.active = state.selected;
                             state.selected = null;
@@ -406,9 +435,24 @@
                         el('activeBar').style.display = (state.active && state.active.cssUrl) ? 'flex' : 'none';
                         updatePending();
                         render();
-                        setTimeout(function () { window.top.location.reload(); }, 500);
+
+
+                        var doReload = function () {
+                            setTimeout(function () { window.top.location.reload(); }, 300);
+                        };
+                        if (window.caches) {
+                            caches.keys().then(function (keys) {
+                                return Promise.all(
+                                    keys.filter(function (k) { return k.startsWith('skinmanager-v'); })
+                                        .map(function (k) { return caches.delete(k); })
+                                );
+                            }).then(doReload).catch(doReload);
+                        } else {
+                            doReload();
+                        }
                     });
                 }
+
 
                 function doRemove() {
                     var def = state.themes.find(function (t) { return !t.cssUrl; })
@@ -416,6 +460,7 @@
                     pick(def);
                     doSave();
                 }
+
 
                 document.querySelector('.skinManagerConfigurationPage')
                     .addEventListener('pageshow', loadConfig);
@@ -482,6 +527,7 @@
                     wrap.appendChild(row1); wrap.appendChild(row2); wrap.appendChild(valueDisplay); wrap.appendChild(hidden);
                     return wrap;
                 }
+
 
                 function openVarsModal(theme) {
                     var vars = theme.vars || [];
