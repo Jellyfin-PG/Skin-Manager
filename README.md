@@ -33,6 +33,14 @@ Navigate to **Dashboard > Skin Manager** in the sidebar. The default theme list 
 
 ---
 
+## Theme Variables
+
+As of version 1.2, themes can expose configurable variables that users can adjust without editing any CSS. When a theme supports variables, a **⚙** button appears next to the Select button on its card. Clicking it opens a popup where you can set values such as accent colors, font sizes, or toggle options. Changes take effect after clicking **Save & Apply**.
+
+Theme authors declare variables in `skins.json` using a `vars` array. Each variable maps to a CSS custom property in the theme stylesheet — `ACCENT_COLOR` becomes `var(--accent-color)`, `FONT_SIZE` becomes `var(--font-size)`, and so on. See the [theme repository](https://github.com/Jellyfin-PG/Skin-Manager-Themes) for authoring documentation.
+
+---
+
 ## Theme Repository
 
 Themes are loaded from a separate JSON file hosted at:
@@ -47,9 +55,22 @@ This file is fetched live, so new themes appear without a plugin update. To subm
 
 ## How it works
 
-When you select and save a theme, Skin Manager stores the CSS URL in its configuration. On every request for `index.html`, the File Transformation plugin invokes a callback in Skin Manager which injects a `@import` tag pointing to the selected theme's CSS. The original file on disk is never touched.
+When you select and save a theme, Skin Manager stores the CSS URL and any variable values in its configuration. On every request for `index.html`, the File Transformation plugin invokes a callback in Skin Manager which injects the following before `</body>`:
 
-Removing a theme clears the stored URL. The next page load returns to the default Jellyfin stylesheet.
+- A `<style>` block containing a `:root { }` declaration with the user's variable values as CSS custom properties, if any variables are configured
+- A `<style>` block with an `@import` pointing to the selected theme's CSS
+
+The `:root` block is injected in a separate tag before the `@import` so the imported stylesheet can reference the custom properties via `var()`. The original files on disk are never touched.
+
+Removing a theme clears the stored URL and variables. The next page load returns to the default Jellyfin stylesheet.
+
+---
+
+## Changelog
+
+**1.2.0** — Theme variables. Themes can now declare configurable CSS custom properties. Users can set values from the Skin Manager settings page without editing CSS.
+
+**1.0.0** — Initial release.
 
 ---
 
