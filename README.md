@@ -68,7 +68,7 @@ Removing a theme clears the stored URL and variables. The next page load returns
 
 ## Changelog
 
-**1.3.0** — Skin Versions, Cache and css addons. Introduces functional skin versions, with browser cache for faster loading and proper version checking to pull newer updates, also includes css addons, with variables to allow people to choose what they want with the theme.
+**1.3.0** — Skin versions, Cache and Css addons. Introduces functional skin versions, with browser cache for faster loading and proper version checking to pull newer updates, also includes css addons, with variables to allow people to choose what they want with the theme.
 
 **1.2.1** — Fixes. Fixes for injection, versioning of the plugin, and different configuration versions.
 
