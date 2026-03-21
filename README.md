@@ -1,6 +1,6 @@
 # Skin Manager
 
-A Jellyfin plugin that lets you browse and apply community CSS themes from the server dashboard. Themes are injected at request time — your Jellyfin install is never modified on disk.
+A Jellyfin plugin that lets you browse and apply community CSS themes from the server dashboard. Themes are injected at request time, your Jellyfin install is never modified on disk.
 
 ---
 
