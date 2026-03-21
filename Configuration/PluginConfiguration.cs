@@ -25,5 +25,13 @@ namespace Jellyfin.Plugin.SkinManager.Configuration
         /// Optional extra CSS the user wants applied on top of the selected skin.
         /// </summary>
         public string CustomCss { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Variable values for the currently active theme, serialized as JSON.
+        /// Structure: { "VAR_KEY": "value", ... }
+        /// Injected as a :root { --var-key: value; } block before the theme @import.
+        /// The theme CSS file should reference var(--var-key) for configurable values.
+        /// </summary>
+        public string ThemeVars { get; set; } = "{}";
     }
 }
