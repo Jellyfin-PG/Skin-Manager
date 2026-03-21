@@ -7,7 +7,7 @@ namespace Jellyfin.Plugin.SkinManager.Configuration
         /// <summary>
         /// URL pointing to the skins repository JSON file.
         /// </summary>
-        public string SkinUrl { get; set; } = "https://raw.githubusercontent.com/Jellyfin-PG/Skin-Manager-themes/refs/heads/main/skins.json";
+        public string SkinUrl { get; set; } = "https://raw.githubusercontent.com/Jellyfin-PG/Skin-Manager-Themes/refs/heads/main/skins.json";
 
         /// <summary>
         /// The display name of the currently selected skin (e.g. "Ultrachromic").
