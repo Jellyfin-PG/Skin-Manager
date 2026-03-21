@@ -29,6 +29,14 @@ namespace Jellyfin.Plugin.SkinManager.Configuration
         public string SelectedCssUrl { get; set; } = string.Empty;
 
         /// <summary>
+        /// The version string of the currently selected skin (e.g. "25.12.31").
+        /// Used as part of the browser cache key — when the theme author bumps
+        /// the version in skins.json, the old cached CSS is automatically bypassed.
+        /// Added in config version 3.
+        /// </summary>
+        public string SelectedVersion { get; set; } = string.Empty;
+
+        /// <summary>
         /// Optional extra CSS the user wants applied on top of the selected skin.
         /// </summary>
         public string CustomCss { get; set; } = string.Empty;
