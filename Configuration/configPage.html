@@ -110,7 +110,7 @@
         <script type="text/javascript">
             (function () {
                 var PLUGIN_ID = 'e10fb9d4-c941-4c6e-8260-2641031c2618';
-                var DEFAULT_REPO = 'https://raw.githubusercontent.com/Jellyfin-PG/Skin-Manager-Themes/refs/heads/main/skins.json';
+                var DEFAULT_REPO = 'https://github.com/Jellyfin-PG/Skin-Manager-Themes/blob/main/skins.json';
 
                 var state = {
                     themes: [], selected: null, active: null,
@@ -152,7 +152,7 @@
 
 
                 function loadThemes(url) {
-                    el('themeGrid').innerHTML = '<div class="stateMsg">⏳ Loading themes…</div>';
+                    el('themeGrid').innerHTML = '<div class="stateMsg">Loading themes…</div>';
                     el('tagFilters').innerHTML = '';
                     fetch(url)
                         .then(function (r) {
@@ -271,12 +271,17 @@
                         var img = document.createElement('img');
                         img.src = theme.previewUrl;
                         img.alt = theme.name;
-                        img.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:top center;display:block;';
+                        img.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:top center;display:block;cursor:zoom-in;';
                         img.onerror = function () {
                             img.remove();
                             imgContainer.style.cssText += 'display:flex;align-items:center;justify-content:center;font-size:2.5em;opacity:.2;';
                             imgContainer.textContent = '🎨';
                         };
+                        img.title = 'Click to preview';
+                        img.addEventListener('click', function (e) {
+                            e.stopPropagation();
+                            openPreviewModal(theme);
+                        });
                         imgContainer.appendChild(img);
                     } else {
                         imgContainer.style.cssText += 'display:flex;align-items:center;justify-content:center;font-size:2.5em;opacity:.2;';
@@ -725,6 +730,40 @@
 
                     updateValue();
                     return wrap;
+                }
+
+
+                function openPreviewModal(item) {
+                    var existing = document.getElementById('smPreviewOverlay');
+                    if (existing) existing.remove();
+                    var overlay = document.createElement('div');
+                    overlay.id = 'smPreviewOverlay';
+                    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:100001;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;cursor:zoom-out;';
+                    var imgWrap = document.createElement('div');
+                    imgWrap.style.cssText = 'position:relative;max-width:92vw;max-height:82vh;border-radius:10px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,0.8);';
+                    var img = document.createElement('img');
+                    img.src = item.previewUrl;
+                    img.alt = item.name;
+                    img.style.cssText = 'display:block;max-width:92vw;max-height:82vh;object-fit:contain;border-radius:10px;';
+                    imgWrap.appendChild(img);
+                    var info = document.createElement('div');
+                    info.style.cssText = 'margin-top:14px;text-align:center;';
+                    var title = document.createElement('div');
+                    title.style.cssText = 'font-size:1.1em;font-weight:600;color:#fff;';
+                    title.textContent = item.name;
+                    var author = document.createElement('div');
+                    author.style.cssText = 'font-size:.82em;opacity:.55;margin-top:3px;';
+                    author.textContent = 'by ' + (item.author || '');
+                    info.appendChild(title);
+                    if (item.author) info.appendChild(author);
+                    overlay.appendChild(imgWrap);
+                    overlay.appendChild(info);
+                    overlay.addEventListener('click', function () { overlay.remove(); });
+                    imgWrap.addEventListener('click', function (e) { e.stopPropagation(); });
+                    document.addEventListener('keydown', function onKey(e) {
+                        if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onKey); }
+                    });
+                    document.body.appendChild(overlay);
                 }
 
                 function openVarsModal(theme) {
