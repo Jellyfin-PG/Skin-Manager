@@ -227,7 +227,8 @@ namespace Jellyfin.Plugin.SkinManager.Services
                 if (string.IsNullOrWhiteSpace(kv.Value)) continue;
                 string propName = "--" + kv.Key.ToLowerInvariant().Replace("_", "-");
                 string value = kv.Value.Trim();
-                if (value.Contains(" ") && !value.StartsWith("\"") && !value.StartsWith("'"))
+                bool isCssFunction = value.Contains("(");
+                if (value.Contains(" ") && !isCssFunction && !value.StartsWith("\"") && !value.StartsWith("'"))
                     value = "\"" + value + "\"";
                 sb.Append("    " + propName + ": " + value + ";\n");
                 hasAny = true;
