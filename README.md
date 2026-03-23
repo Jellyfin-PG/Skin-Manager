@@ -36,7 +36,7 @@ Both plugins are available from the repository below.
 In Jellyfin, go to **Dashboard > Plugins > Repositories** and add:
 
 ```
-[https://raw.githubusercontent.com/Jellyfin-PG/Repository/refs/heads/main/manifest.json](https://raw.githubusercontent.com/Jellyfin-PG/Repository/refs/heads/main/manifest.json)
+https://raw.githubusercontent.com/Jellyfin-PG/Repository/refs/heads/main/manifest.json
 ```
 
 **2. Install the plugins**
@@ -58,7 +58,7 @@ Theme authors declare variables in `skins.json` using a `vars` array. Each varia
 Themes are loaded from a separate JSON file hosted at:
 
 ```
-[https://raw.githubusercontent.com/Jellyfin-PG/Skin-Manager-Themes/refs/heads/main/skins.json](https://raw.githubusercontent.com/Jellyfin-PG/Skin-Manager-Themes/refs/heads/main/skins.json)
+https://raw.githubusercontent.com/Jellyfin-PG/Skin-Manager-Themes/refs/heads/main/skins.json
 ```
 
 This file is fetched live, so new themes appear without a plugin update. To submit a theme, open an issue using the **Theme Submission** template in the [theme repository](https://github.com/Jellyfin-PG/Skin-Manager-Themes).
