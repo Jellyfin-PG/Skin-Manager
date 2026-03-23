@@ -15,7 +15,7 @@
   </a>
    
   <a href="assets/screenshot02.png">
-    <img src="assets/screenshot01.png" width="45%" alt="Theme Settings" />
+    <img src="assets/screenshot02.png" width="45%" alt="Theme Settings" />
   </a>
 </p>
 <p align="center">
