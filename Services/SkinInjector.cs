@@ -131,7 +131,7 @@ namespace Jellyfin.Plugin.SkinManager.Services
                     "\n" +
                     "    function checkForUpdate() {\n" +
                     "        if (!repoUrl || !themeName) return;\n" +
-                    "        cachedFetch(repoUrl, CACHE_META).then(function(text) {\n" +
+                    "        fetch(repoUrl).then(function(r){return r.text();}).then(function(text) {\n" +
                     "            var themes; try { themes = JSON.parse(text); } catch(e) { return; }\n" +
                     "            var entry = themes.find(function(t) { return t.name === themeName; });\n" +
                     "            if (!entry || !entry.version || entry.version === themeVer) return;\n" +
@@ -188,8 +188,7 @@ namespace Jellyfin.Plugin.SkinManager.Services
                     "    var vars      = " + varJson + ";\n" +
                     "    var pluginId  = \"e10fb9d4-c941-4c6e-8260-2641031c2618\";\n" +
                     "    var CACHE_CSS  = 'skinmanager-v' + (themeVer || '0');\n" +
-                    "    var CACHE_META = 'skinmanager-meta';\n" +
-                    "\n" +
+                                        "\n" +
                     sharedFunctions +
                     executionTail +
                     "})();\n" +
