@@ -37,7 +37,7 @@ Navigate to **Dashboard > Skin Manager** in the sidebar. The default theme list 
 
 As of version 1.2, themes can expose configurable variables that users can adjust without editing any CSS. When a theme supports variables, a **⚙** button appears next to the Select button on its card. Clicking it opens a popup where you can set values such as accent colors, font sizes, or toggle options. Changes take effect after clicking **Save & Apply**.
 
-Theme authors declare variables in `skins.json` using a `vars` array. Each variable maps to a CSS custom property in the theme stylesheet — `ACCENT_COLOR` becomes `var(--accent-color)`, `FONT_SIZE` becomes `var(--font-size)`, and so on. See the [theme repository](https://github.com/Jellyfin-PG/Skin-Manager-Themes) for authoring documentation.
+Theme authors declare variables in `skins.json` using a `vars` array. Each variable maps to a CSS custom property in the theme stylesheet, `ACCENT_COLOR` becomes `var(--accent-color)`, `FONT_SIZE` becomes `var(--font-size)`, and so on. See the [theme repository](https://github.com/Jellyfin-PG/Skin-Manager-Themes) for authoring documentation.
 
 ---
 
@@ -67,6 +67,10 @@ Removing a theme clears the stored URL and variables. The next page load returns
 ---
 
 ## Changelog
+
+**1.3.2** — Cache Fixes. Fixes for cache eviction on theme switching.
+
+**1.3.1** — Speed Improvement. Improvements for url checking and injection.
 
 **1.3.0** — Skin versions, Cache and Css addons. Introduces functional skin versions, with browser cache for faster loading and proper version checking to pull newer updates, also includes css addons, with variables to allow people to choose what they want with the theme.
 
