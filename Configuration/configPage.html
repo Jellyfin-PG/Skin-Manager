@@ -110,7 +110,7 @@
         <script type="text/javascript">
             (function () {
                 var PLUGIN_ID = 'e10fb9d4-c941-4c6e-8260-2641031c2618';
-                var DEFAULT_REPO = 'https://github.com/Jellyfin-PG/Skin-Manager-Themes/blob/main/skins.json';
+                var DEFAULT_REPO = 'https://raw.githubusercontent.com/Jellyfin-PG/Skin-Manager-Themes/refs/heads/main/skins.json';
 
                 var state = {
                     themes: [], selected: null, active: null,
@@ -240,9 +240,9 @@
 
                     var hasPending = state.selected !== null;
                     var isSel = hasPending
-                        ? (state.selected && state.selected.name === theme.name)
-                        : (state.active && state.active.name === theme.name);
-                    var isAct = state.active && state.active.name === theme.name;
+                        ? (state.selected && state.selected.name === (theme.name || ""))
+                        : (state.active && state.active.name === (theme.name || ""));
+                    var isAct = state.active && state.active.name === (theme.name || "");
 
 
                     var card = document.createElement('div');
@@ -265,12 +265,12 @@
 
                     var imgContainer = document.createElement('div');
                     imgContainer.className = 'cardImageContainer coveredImage';
-                    if (theme.previewUrl) {
+                    if ((theme.previewUrl || "")) {
 
 
                         var img = document.createElement('img');
-                        img.src = theme.previewUrl;
-                        img.alt = theme.name;
+                        img.src = (theme.previewUrl || "");
+                        img.alt = (theme.name || "");
                         img.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:top center;display:block;cursor:zoom-in;';
                         img.onerror = function () {
                             img.remove();
@@ -309,21 +309,21 @@
                     var cardText = document.createElement('div');
                     cardText.className = 'cardText';
                     cardText.style.fontWeight = 'bold';
-                    cardText.textContent = theme.name;
+                    cardText.textContent = (theme.name || "");
                     footer.appendChild(cardText);
 
-                    if (theme.author) {
+                    if ((theme.author || "")) {
                         var authText = document.createElement('div');
                         authText.className = 'cardText cardText-secondary';
-                        authText.textContent = 'by ' + theme.author;
+                        authText.textContent = 'by ' + (theme.author || "");
                         footer.appendChild(authText);
                     }
 
-                    if (theme.description) {
+                    if ((theme.description || "")) {
                         var descText = document.createElement('div');
                         descText.className = 'cardText cardText-secondary';
                         descText.style.cssText = 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:.8em;opacity:.7;margin-top:.2em';
-                        descText.textContent = theme.description;
+                        descText.textContent = (theme.description || "");
                         footer.appendChild(descText);
                     }
 
@@ -342,7 +342,7 @@
                     });
                     btnRow.appendChild(selBtn);
 
-                    if (isSel && (theme.vars || []).length > 0) {
+                    if (isSel && ((theme.vars || []) || []).length > 0) {
                         var cfgBtn = document.createElement('button');
                         cfgBtn.setAttribute('is', 'emby-button');
                         cfgBtn.className = 'emby-button';
@@ -353,13 +353,13 @@
                         btnRow.appendChild(cfgBtn);
                     }
 
-                    if (theme.sourceUrl) {
+                    if ((theme.sourceUrl || "")) {
                         var srcBtn = document.createElement('a');
                         srcBtn.className = 'emby-button';
                         srcBtn.style.cssText = 'padding:.35em .6em;font-size:.78em;border:1px solid rgba(255,255,255,.2)';
                         srcBtn.textContent = '↗';
                         srcBtn.title = 'View source';
-                        srcBtn.href = theme.sourceUrl;
+                        srcBtn.href = (theme.sourceUrl || "");
                         srcBtn.target = '_blank';
                         srcBtn.rel = 'noopener noreferrer';
 
@@ -379,8 +379,8 @@
                     state.pendingHasAddons = false;
 
 
-                    if (theme.cssUrl) {
-                        fetch(theme.cssUrl)
+                    if ((theme.cssUrl || "")) {
+                        fetch((theme.cssUrl || ""))
                             .then(function (r) { return r.text(); })
                             .then(function (text) {
                                 state.pendingHasAddons = /@sm-import-if/.test(text);
@@ -419,9 +419,9 @@
                     var vars = state.pendingVars !== null ? state.pendingVars : state.themeVars;
                     var cfg = Object.assign({}, state.config, {
                         SkinUrl: el('repoUrl').value.trim(),
-                        Skin: theme.name,
-                        SelectedCssUrl: theme.cssUrl || '',
-                        SelectedVersion: theme.version || '',
+                        Skin: (theme.name || ""),
+                        SelectedCssUrl: (theme.cssUrl || "") || '',
+                        SelectedVersion: (theme.version || "") || '',
                         ThemeVars: JSON.stringify(vars),
                         HasConditionalImports: state.pendingHasAddons || false
                     });
@@ -767,7 +767,7 @@
                 }
 
                 function openVarsModal(theme) {
-                    var vars = theme.vars || [];
+                    var vars = (theme.vars || []) || [];
                     var saved = state.pendingVars !== null ? state.pendingVars : state.themeVars;
                     var existing = document.getElementById('smVarsOverlay');
                     if (existing) existing.remove();
@@ -778,11 +778,11 @@
                     dialog.style.cssText = 'background:#1a1d21;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:28px;width:100%;max-width:440px;box-shadow:0 24px 60px rgba(0,0,0,0.7);overflow-y:auto;max-height:90vh;';
                     var title = document.createElement('div');
                     title.style.cssText = 'font-size:1.05em;font-weight:bold;margin-bottom:4px;color:#fff;';
-                    title.textContent = theme.name;
+                    title.textContent = (theme.name || "");
                     dialog.appendChild(title);
                     var subtitle = document.createElement('div');
                     subtitle.style.cssText = 'font-size:.78em;opacity:.5;margin-bottom:20px;';
-                    subtitle.textContent = 'Configure theme variables. Theme CSS uses var(--key-name).';
+                    subtitle.textContent = 'Configure theme variables.';
                     dialog.appendChild(subtitle);
                     var container = document.createElement('div');
                     container.id = 'smVarsContainer';
@@ -791,22 +791,22 @@
                         row.style.marginBottom = '16px';
                         var lbl = document.createElement('div');
                         lbl.style.cssText = 'font-size:.82em;font-weight:600;margin-bottom:3px;';
-                        lbl.textContent = v.name || v.key;
+                        lbl.textContent = (v.name || v.key || "") || v.key;
                         row.appendChild(lbl);
-                        if (v.description) {
+                        if ((v.description || "")) {
                             var desc = document.createElement('div');
                             desc.style.cssText = 'font-size:.72em;opacity:.5;margin-bottom:5px;';
-                            desc.textContent = v.description;
+                            desc.textContent = (v.description || "");
                             row.appendChild(desc);
                         }
-                        var inputType = (v.type || 'text').toLowerCase();
+                        var inputType = ((v.type || "text") || 'text').toLowerCase();
                         var input;
                         if (inputType === 'boolean') {
-                            var trueVal = v.trueValue !== undefined ? v.trueVal : 'true';
-                            var falseVal = v.falseValue !== undefined ? v.falseVal : 'false';
-                            trueVal = v.trueValue !== undefined ? v.trueValue : 'true';
-                            falseVal = v.falseValue !== undefined ? v.falseValue : 'false';
-                            var savedVal = saved[v.key] !== undefined ? saved[v.key] : (v.default === 'true' || v.default === trueVal ? trueVal : falseVal);
+                            var trueVal = (v.trueValue !== undefined ? v.trueValue : "true") !== undefined ? v.trueVal : 'true';
+                            var falseVal = (v.falseValue !== undefined ? v.falseValue : "false") !== undefined ? v.falseVal : 'false';
+                            trueVal = (v.trueValue !== undefined ? v.trueValue : "true") !== undefined ? (v.trueValue !== undefined ? v.trueValue : "true") : 'true';
+                            falseVal = (v.falseValue !== undefined ? v.falseValue : "false") !== undefined ? (v.falseValue !== undefined ? v.falseValue : "false") : 'false';
+                            var savedVal = saved[v.key] !== undefined ? saved[v.key] : ((v.default || "") === 'true' || (v.default || "") === trueVal ? trueVal : falseVal);
                             input = document.createElement('select');
                             [['true', trueVal], ['false', falseVal]].forEach(function (pair) {
                                 var o = document.createElement('option');
@@ -822,16 +822,16 @@
                         } else if (inputType === 'color') {
                             var colorWidget = buildColorInput(
                                 saved[v.key] !== undefined ? saved[v.key] : null,
-                                v.default || '#000000',
-                                v.allowGradient !== false
+                                (v.default || "") || '#000000',
+                                (v.allowGradient !== false) !== false
                             );
                             colorWidget.querySelector('input[type=hidden]').dataset.varKey = v.key;
                             row.appendChild(colorWidget);
                         } else {
                             input = document.createElement('input');
                             input.type = inputType === 'number' ? 'number' : 'text';
-                            input.value = saved[v.key] !== undefined ? saved[v.key] : (v.default || '');
-                            input.placeholder = v.default || '';
+                            input.value = saved[v.key] !== undefined ? saved[v.key] : ((v.default || "") || '');
+                            input.placeholder = (v.default || "") || '';
                             input.name = 'sm-var-' + v.key;
                             input.id = 'sm-var-' + v.key;
                             input.style.cssText = 'width:100%;padding:7px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:5px;color:inherit;font-size:.85em;font-family:inherit;box-sizing:border-box;';
