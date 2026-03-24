@@ -167,8 +167,6 @@ namespace Jellyfin.Plugin.SkinManager.Services
                 }
                 else
                 {
-                    // CDN, no vars, no conditional imports — direct <link>, fastest path,
-                    // no fetch needed, browser handles HTTP caching natively
                     executionTail =
                         "    function injectDirectLink() {\n" +
                         "        var existing = document.getElementById('skinmanager-theme');\n" +
@@ -190,9 +188,9 @@ namespace Jellyfin.Plugin.SkinManager.Services
                     "    var vars      = " + varJson + ";\n" +
                     "    var pluginId  = \"e10fb9d4-c941-4c6e-8260-2641031c2618\";\n" +
                     "    var CACHE_CSS  = 'skinmanager-v' + (themeVer || '0');\n" +
-                                        "\n" +
-                    sharedFunctions +
-                    executionTail +
+                    "                                        \n" +
+                    "    " + sharedFunctions +
+                    "    " + executionTail +
                     "})();\n" +
                     "</script>\n";
             }
@@ -221,17 +219,21 @@ namespace Jellyfin.Plugin.SkinManager.Services
             if (vars == null || vars.Count == 0)
                 return string.Empty;
 
-            var sb = new StringBuilder(":root {\n");
+            var sb = new StringBuilder("html:root, body {\n");
             bool hasAny = false;
             foreach (var kv in vars)
             {
                 if (string.IsNullOrWhiteSpace(kv.Value)) continue;
-                string propName = "--" + kv.Key.Trim().TrimStart('-');
+
+                string kebabKey = ToKebabCase(kv.Key);
+                string propName = "--" + kebabKey;
+
                 string value = kv.Value.Trim();
                 bool isCssFunction = value.Contains("(");
                 if (value.Contains(" ") && !isCssFunction && !value.StartsWith("\"") && !value.StartsWith("'"))
                     value = "\"" + value + "\"";
-                sb.Append("    " + propName + ": " + value + ";\n");
+
+                sb.Append("    " + propName + ": " + value + " !important;\n");
                 hasAny = true;
             }
             sb.Append("}\n");
@@ -262,11 +264,25 @@ namespace Jellyfin.Plugin.SkinManager.Services
             {
                 if (string.IsNullOrWhiteSpace(kv.Value)) continue;
                 if (!first) sb.Append(",");
-                sb.Append("\"" + EscapeJs(kv.Key) + "\":\"" + EscapeJs(kv.Value.Trim()) + "\"");
+
+                string kebabKey = ToKebabCase(kv.Key);
+                sb.Append("\"" + EscapeJs(kebabKey) + "\":\"" + EscapeJs(kv.Value.Trim()) + "\"");
+
                 first = false;
             }
             sb.Append("}");
             return sb.ToString();
+        }
+
+        private static string ToKebabCase(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key)) return string.Empty;
+
+            key = key.Trim().TrimStart('-');
+
+            key = Regex.Replace(key, "([a-z])([A-Z])", "$1-$2");
+
+            return key.Replace('_', '-').ToLowerInvariant();
         }
 
         private static string EscapeJs(string s)

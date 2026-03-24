@@ -775,7 +775,7 @@
                     overlay.id = 'smVarsOverlay';
                     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;';
                     var dialog = document.createElement('div');
-                    dialog.style.cssText = 'background:#1a1d21;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:28px;width:100%;max-width:440px;box-shadow:0 24px 60px rgba(0,0,0,0.7);overflow-y:auto;max-height:90vh;';
+                    dialog.style.cssText = 'color-scheme:dark;background:#1a1d21;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:28px;width:100%;max-width:440px;box-shadow:0 24px 60px rgba(0,0,0,0.7);overflow-y:auto;max-height:90vh;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.3) transparent;';
                     var title = document.createElement('div');
                     title.style.cssText = 'font-size:1.05em;font-weight:bold;margin-bottom:4px;color:#fff;';
                     title.textContent = (theme.name || "");
@@ -811,12 +811,14 @@
                             [['true', trueVal], ['false', falseVal]].forEach(function (pair) {
                                 var o = document.createElement('option');
                                 o.value = pair[1]; o.textContent = pair[0];
+                                o.style.background = '#1a1d21';
+                                o.style.color = '#ffffff';
                                 input.appendChild(o);
                             });
                             input.value = savedVal;
                             input.name = 'sm-var-' + v.key;
                             input.id = 'sm-var-' + v.key;
-                            input.style.cssText = 'width:100%;padding:7px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:5px;color:inherit;font-size:.85em;font-family:inherit;box-sizing:border-box;';
+                            input.style.cssText = 'color-scheme:dark;width:100%;padding:7px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:5px;color:inherit;font-size:.85em;font-family:inherit;box-sizing:border-box;';
                             input.dataset.varKey = v.key;
                             row.appendChild(input);
                         } else if (inputType === 'color') {
