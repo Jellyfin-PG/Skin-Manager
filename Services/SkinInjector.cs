@@ -167,6 +167,8 @@ namespace Jellyfin.Plugin.SkinManager.Services
                 }
                 else
                 {
+                    // CDN, no vars, no conditional imports — direct <link>, fastest path,
+                    // no fetch needed, browser handles HTTP caching natively
                     executionTail =
                         "    function injectDirectLink() {\n" +
                         "        var existing = document.getElementById('skinmanager-theme');\n" +
@@ -224,7 +226,7 @@ namespace Jellyfin.Plugin.SkinManager.Services
             foreach (var kv in vars)
             {
                 if (string.IsNullOrWhiteSpace(kv.Value)) continue;
-                string propName = "--" + kv.Key.ToLowerInvariant().Replace("_", "-");
+                string propName = "--" + kv.Key.Trim().TrimStart('-');
                 string value = kv.Value.Trim();
                 bool isCssFunction = value.Contains("(");
                 if (value.Contains(" ") && !isCssFunction && !value.StartsWith("\"") && !value.StartsWith("'"))
