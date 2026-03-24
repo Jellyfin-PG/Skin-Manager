@@ -76,6 +76,8 @@ Removing a theme clears the stored URL and variables. The next page load returns
 
 ## Changelog
 
+**1.3.4-7** — Fixes. Minor quality of life fixes.
+
 **1.3.3** — CDN and Gradients. Changes for CDN based themes where possible, and gradient options with theme creators having control on where to use them.
 
 **1.3.2** — Cache Fixes. Fixes for cache eviction on theme switching.
