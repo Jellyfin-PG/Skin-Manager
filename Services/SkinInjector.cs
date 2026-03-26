@@ -110,6 +110,8 @@ namespace Jellyfin.Plugin.SkinManager.Services
             {
                 result += "<link rel=\"preconnect\" href=\"https://raw.githubusercontent.com\" crossorigin=\"anonymous\">\n";
                 result += "<link rel=\"preconnect\" href=\"https://cdn.jsdelivr.net\" crossorigin=\"anonymous\">\n";
+                result += "<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\" crossorigin=\"anonymous\">\n";
+                result += "<link rel=\"preconnect\" href=\"https://i.imgur.com\" crossorigin=\"anonymous\">\n";
                 result += BuildThemeGuardScript();
             }
 
