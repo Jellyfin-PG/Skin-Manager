@@ -10,12 +10,13 @@ namespace Jellyfin.Plugin.SkinManager.Services
     public static class SkinInjector
     {
         private const string StartMarker = "<!-- SkinManager-Start -->";
-        private const string EndMarker   = "<!-- SkinManager-End -->";
+        private const string EndMarker = "<!-- SkinManager-End -->";
 
         private static readonly Regex StripPreviousInjection = new(
             Regex.Escape(StartMarker) + @"[\s\S]*?" + Regex.Escape(EndMarker) + @"\n?",
             RegexOptions.Compiled);
-        private static readonly Regex BodyCloseTag = new(@"(</body>)", RegexOptions.Compiled);
+            
+        private static readonly Regex HeadCloseTag = new(@"(</head>)", RegexOptions.Compiled);
 
         private static readonly Regex JellyfinThemeLink = new(
             @"<link\b[^>]*\bhref=[""']themes/[^""']+/theme\.css[""'][^>]*>",
@@ -47,14 +48,11 @@ namespace Jellyfin.Plugin.SkinManager.Services
                         || (!string.IsNullOrWhiteSpace(config.SelectedCssUrl)
                             && config.SelectedCssUrl != "Default");
 
-                    if (skinActive)
-                        html = JellyfinThemeLink.Replace(html, string.Empty);
-
                     string injection = GetInjection(config);
                     if (!string.IsNullOrEmpty(injection))
                     {
                         string block = "\n" + StartMarker + "\n" + injection + EndMarker + "\n";
-                        html = BodyCloseTag.Replace(html, m => block + m.Value);
+                        html = HeadCloseTag.Replace(html, m => block + m.Value);
                     }
                 }
 
@@ -86,7 +84,7 @@ namespace Jellyfin.Plugin.SkinManager.Services
                     return _cachedInjectionValue;
 
                 _cachedInjectionValue = BuildInjection(config);
-                _cachedInjectionKey   = key;
+                _cachedInjectionKey = key;
                 return _cachedInjectionValue;
             }
         }
@@ -109,12 +107,18 @@ namespace Jellyfin.Plugin.SkinManager.Services
                     && config.SelectedCssUrl != "Default");
 
             if (skinActive)
+            {
+                result += "<link rel=\"preconnect\" href=\"https://raw.githubusercontent.com\" crossorigin=\"anonymous\">\n";
+                result += "<link rel=\"preconnect\" href=\"https://cdn.jsdelivr.net\" crossorigin=\"anonymous\">\n";
                 result += BuildThemeGuardScript();
+            }
 
             if (!config.AllowUserThemes
                 && !string.IsNullOrWhiteSpace(config.SelectedCssUrl)
                 && config.SelectedCssUrl != "Default")
             {
+                result += $"<link rel=\"preload\" href=\"{config.SelectedCssUrl}\" as=\"style\" crossorigin=\"anonymous\">\n";
+
                 string varBlock = BuildCssVarBlock(config.ThemeVars);
                 string varJson = BuildVarsJson(config.ThemeVars);
                 string escapedUrl = EscapeJs(config.SelectedCssUrl);
@@ -173,17 +177,23 @@ namespace Jellyfin.Plugin.SkinManager.Services
         var existing = document.getElementById('skinmanager-theme');
         if (existing) existing.remove();
         var css = substituteVars(code, vars);
+        
+        var appendTarget = function(el) {
+            if (document.body) document.body.appendChild(el);
+            else document.addEventListener('DOMContentLoaded', function() { document.body.appendChild(el); });
+        };
+
         try {
             var blob = new Blob([css], { type: 'text/css' });
             var link = document.createElement('link');
             link.rel = 'stylesheet'; link.id = 'skinmanager-theme';
             link.href = URL.createObjectURL(blob);
-            document.head.appendChild(link);
+            appendTarget(link);
         } catch(e) {
             var s = document.createElement('style');
             s.id = 'skinmanager-theme';
-            s.textContent = substituteVars(code, vars);
-            document.head.appendChild(s);
+            s.textContent = css;
+            appendTarget(s);
         }
     }
 
@@ -218,45 +228,84 @@ namespace Jellyfin.Plugin.SkinManager.Services
                 if (isRawGithub || hasVars || hasAddons)
                 {
                     executionTail = @"
-    function isDashboard() { return new RegExp('^#/(dashboard|configurationpage)(/|[?]|$)').test(window.location.hash); }
+    function isDashboard() { return new RegExp('^#/(dashboard|configurationpage|metadata)(/|[?]|$)').test(window.location.hash); }
+    
+    function injectGlobalVars() {
+        if (!rawVars || document.getElementById('skinmanager-vars')) return;
+        var s = document.createElement('style');
+        s.id = 'skinmanager-vars';
+        s.textContent = rawVars;
+        if (document.body) document.body.appendChild(s);
+        else document.addEventListener('DOMContentLoaded', function() { document.body.appendChild(s); });
+    }
+
     evictOldCaches(); checkForUpdate();
-    if (!isDashboard()) {
+    
+    if (isDashboard()) {
+        var v = document.getElementById('skinmanager-vars'); if (v) v.remove();
+    } else {
         cachedFetch(cssUrl, CACHE_CSS)
             .then(function(code) { return resolveConditionalImports(code); })
             .then(function(code) { injectBlob(code); })
             .catch(function(e) { console.warn('[SkinManager] Load failed: ' + cssUrl, e); });
     }
-    window.addEventListener('hashchange', function() {
+
+    function handleNavigationGithub() {
         if (isDashboard()) {
             var e = document.getElementById('skinmanager-theme'); if (e) e.remove();
             var v = document.getElementById('skinmanager-vars');  if (v) v.remove();
-        } else {
+        } else if (!document.getElementById('skinmanager-theme')) {
+            injectGlobalVars();
             cachedFetch(cssUrl, CACHE_CSS)
                 .then(function(code) { return resolveConditionalImports(code); })
                 .then(function(code) { injectBlob(code); })
                 .catch(function() {});
         }
-    });
+    }
+
+    window.addEventListener('hashchange', handleNavigationGithub);
+    window.addEventListener('popstate', handleNavigationGithub);
+    
+    var origPush = history.pushState;
+    history.pushState = function() { origPush.apply(this, arguments); handleNavigationGithub(); };
+    var origReplace = history.replaceState;
+    history.replaceState = function() { origReplace.apply(this, arguments); handleNavigationGithub(); };
 ";
                 }
                 else
                 {
                     executionTail = @"
-    function isDashboard() { return new RegExp('^#/(dashboard|configurationpage)(/|[?]|$)').test(window.location.hash); }
+    function isDashboard() { return new RegExp('^#/(dashboard|configurationpage|metadata)(/|[?]|$)').test(window.location.hash); }
     function injectDirectLink() {
         var existing = document.getElementById('skinmanager-theme');
         if (existing) existing.remove();
         var link = document.createElement('link');
         link.rel = 'stylesheet'; link.id = 'skinmanager-theme'; link.href = cssUrl;
-        document.head.appendChild(link);
+        if (document.body) document.body.appendChild(link);
+        else document.addEventListener('DOMContentLoaded', function() { document.body.appendChild(link); });
     }
+    
     evictOldCaches(); checkForUpdate();
-    if (!isDashboard()) injectDirectLink();
-    window.addEventListener('hashchange', function() {
+    
+    if (isDashboard()) {
+        var e = document.getElementById('skinmanager-theme'); if (e) e.remove();
+    } else {
+        injectDirectLink();
+    }
+
+    function handleNavigationCDN() {
         if (isDashboard()) {
             var e = document.getElementById('skinmanager-theme'); if (e) e.remove();
-        } else { injectDirectLink(); }
-    });
+        } else if (!document.getElementById('skinmanager-theme')) { injectDirectLink(); }
+    }
+    
+    window.addEventListener('hashchange', handleNavigationCDN);
+    window.addEventListener('popstate', handleNavigationCDN);
+    
+    var origPush = history.pushState;
+    history.pushState = function() { origPush.apply(this, arguments); handleNavigationCDN(); };
+    var origReplace = history.replaceState;
+    history.replaceState = function() { origReplace.apply(this, arguments); handleNavigationCDN(); };
 ";
                 }
 
@@ -267,6 +316,7 @@ namespace Jellyfin.Plugin.SkinManager.Services
     var themeName = ""{EscapeJs(config.Skin)}"";
     var themeVer  = ""{escapedVer}"";
     var vars      = {varJson};
+    var rawVars   = ""{EscapeJs(varBlock)}"";
     var pluginId  = ""e10fb9d4-c941-4c6e-8260-2641031c2618"";
     var CACHE_CSS  = 'skinmanager-v' + (themeVer || '0');
 {sharedFunctions}{executionTail}}})();
@@ -284,60 +334,97 @@ namespace Jellyfin.Plugin.SkinManager.Services
         }
 
         /// <summary>
-        /// Injects a tiny script + MutationObserver that immediately removes any
-        /// <c>&lt;link href="themes/*/theme.css"&gt;</c> that Jellyfin's JavaScript
-        /// dynamically inserts after the page boots, so it cannot compete with the
-        /// active skin's stylesheet.
+        /// Injects a tiny script + MutationObserver that acts as a Cascade Enforcer.
+        /// It ensures that our custom skins always reside at the absolute bottom
+        /// of the <body> so they naturally override Jellyfin's base theme.
         /// </summary>
         private static string BuildThemeGuardScript()
         {
             return @"<script id=""skinmanager-theme-guard"">
 (function() {
     var THEME_PATTERN = /(?:^|\/)themes\/[^\/]+\/theme\.css(\?|$)/i;
+    
+    var OUR_IDS = [
+        'skinmanager-vars', 
+        'skinmanager-theme', 
+        'skinmanager-user-vars', 
+        'skinmanager-user-theme', 
+        'skinmanager-custom'
+    ];
 
-    function isDashboard() { return new RegExp('^#/(dashboard|configurationpage)(/|[?]|$)').test(window.location.hash); }
-
-    function ensureSkinLast() {
-        if (!document.body) return;
-        var ids = ['skinmanager-theme', 'skinmanager-user-theme'];
-        ids.forEach(function(id) {
-            var el = document.getElementById(id);
-            if (el) {
-                document.body.appendChild(el);
-                console.log('[SkinManager] ' + id + ' moved to end of body (cascade reorder).');
-            }
-        });
+    function isDashboard() { 
+        return new RegExp('^#/(dashboard|configurationpage|metadata)(/|[?]|$)').test(window.location.hash); 
     }
 
-    window.addEventListener('hashchange', function() {
-        if (!isDashboard()) {
-            ensureSkinLast();
+    function ensureSkinLast() {
+        if (isDashboard() || !document.body) return;
+        
+        var reordered = false;
+        for (var i = 0; i < OUR_IDS.length; i++) {
+            var el = document.getElementById(OUR_IDS[i]);
+            if (el) {
+                var isSafe = true;
+                var next = el.nextElementSibling;
+                
+                while (next) {
+                    if (OUR_IDS.indexOf(next.id) === -1) {
+                        isSafe = false;
+                        break;
+                    }
+                    next = next.nextElementSibling;
+                }
+                
+                if (!isSafe || el.parentNode !== document.body) {
+                    document.body.appendChild(el);
+                    reordered = true;
+                }
+            }
         }
-    });
+        
+        if (reordered) {
+            console.log('[SkinManager] Custom skin priority reasserted at bottom of body.');
+        }
+    }
+
+    function handleNavigationGuard() { ensureSkinLast(); }
+    
+    window.addEventListener('hashchange', handleNavigationGuard);
+    window.addEventListener('popstate', handleNavigationGuard);
+    
+    var origPush = history.pushState;
+    history.pushState = function() { origPush.apply(this, arguments); handleNavigationGuard(); };
+    
+    var origReplace = history.replaceState;
+    history.replaceState = function() { origReplace.apply(this, arguments); handleNavigationGuard(); };
 
     var guard = new MutationObserver(function(mutations) {
-        if (isDashboard()) return;
+        if (isDashboard() || !document.body) return;
+        
         var needsReorder = false;
-        mutations.forEach(function(m) {
-            m.addedNodes.forEach(function(node) {
-                if (node.nodeType !== 1 || node.tagName !== 'LINK') return;
-                if (THEME_PATTERN.test(node.getAttribute('href') || '')) {
-                    console.log('[SkinManager] Jellyfin theme detected — reordering skin link.');
+        for (var i = 0; i < mutations.length; i++) {
+            var added = mutations[i].addedNodes;
+            for (var j = 0; j < added.length; j++) {
+                var node = added[j];
+                if (node.nodeName === 'LINK' && THEME_PATTERN.test(node.getAttribute('href') || '')) {
                     needsReorder = true;
+                    break;
                 }
-            });
-        });
-        if (needsReorder) ensureSkinLast();
+            }
+            if (needsReorder) break; 
+        }
+        
+        if (needsReorder) {
+            console.log('[SkinManager] Jellyfin theme injected. Reacting...');
+            ensureSkinLast();
+        }
     });
 
     guard.observe(document.documentElement, { childList: true, subtree: true });
 
     if (document.body) {
-        if (!isDashboard()) ensureSkinLast();
+        ensureSkinLast();
     } else {
-        document.addEventListener('DOMContentLoaded', function() {
-            if (!isDashboard()) ensureSkinLast();
-        });
+        document.addEventListener('DOMContentLoaded', ensureSkinLast);
     }
 })();
 </script>
@@ -454,13 +541,16 @@ namespace Jellyfin.Plugin.SkinManager.Services
     var MENU_ITEM_ID = 'skinmanager-mytheme-menuitem';
     var CACHE_CSS    = 'skinmanager-user-v';
 
+    var _cachedLsKey = null;
     function getLsKey() {
+        if (_cachedLsKey) return _cachedLsKey;
         try {
             var creds = JSON.parse(localStorage.getItem('jellyfin_credentials') || '{}');
             var srv   = (creds.Servers || [])[0] || {};
             var uid   = srv.UserId      || '';
             var token = srv.AccessToken || '';
-            return 'skinmanager-user-override' + (uid && token ? '-' + uid : '');
+            _cachedLsKey = 'skinmanager-user-override' + (uid && token ? '-' + uid : '');
+            return _cachedLsKey;
         } catch(e) { return 'skinmanager-user-override'; }
     }
 
@@ -468,17 +558,19 @@ namespace Jellyfin.Plugin.SkinManager.Services
         try { return JSON.parse(localStorage.getItem(getLsKey()) || 'null'); } catch(e) { return null; }
     }
 
+    var _kebabP1 = /^-+/;
+    var _kebabP2 = /([a-z])([A-Z])/g;
+    var _kebabP3 = /_/g;
     function toKebabCase(key) {
-        key = (key || '').trim().replace(/^-+/, '');
-        key = key.replace(/([a-z])([A-Z])/g, '$1-$2');
-        return key.replace(/_/g, '-').toLowerCase();
+        key = (key || '').trim().replace(_kebabP1, '');
+        key = key.replace(_kebabP2, '$1-$2');
+        return key.replace(_kebabP3, '-').toLowerCase();
     }
 
     function substituteVars(code, vars) {
-        Object.keys(vars).forEach(function(key) {
-            code = code.split('{{' + key + '}}').join(vars[key]);
+        return code.replace(/\{\{([^{}]+)\}\}/g, function(match, key) {
+            return vars[key] !== undefined ? vars[key] : match;
         });
-        return code;
     }
 
     function cachedFetch(url, cacheName) {
@@ -504,6 +596,12 @@ namespace Jellyfin.Plugin.SkinManager.Services
         var version = override.version || '0';
         var vars    = override.vars    || {};
         if (!cssUrl) return;
+        
+        var appendTarget = function(el) {
+            if (document.body) document.body.appendChild(el);
+            else document.addEventListener('DOMContentLoaded', function() { document.body.appendChild(el); });
+        };
+        
         var varKeys = Object.keys(vars);
         if (varKeys.length > 0) {
             var cssVars = ':root, body {\n';
@@ -514,7 +612,7 @@ namespace Jellyfin.Plugin.SkinManager.Services
             var styleEl = document.getElementById('skinmanager-user-vars') || document.createElement('style');
             styleEl.id = 'skinmanager-user-vars';
             styleEl.textContent = cssVars;
-            document.head.appendChild(styleEl);
+            appendTarget(styleEl); 
         }
         var epoch = _injectEpoch;
         cachedFetch(cssUrl, CACHE_CSS + version).then(function(code) {
@@ -527,11 +625,11 @@ namespace Jellyfin.Plugin.SkinManager.Services
                 var link = document.createElement('link');
                 link.rel = 'stylesheet'; link.id = 'skinmanager-user-theme';
                 link.href = URL.createObjectURL(blob);
-                document.body.appendChild(link);
+                appendTarget(link); 
             } catch(e) {
                 var s = document.createElement('style');
                 s.id = 'skinmanager-user-theme'; s.textContent = code;
-                document.body.appendChild(s);
+                appendTarget(s); 
             }
         }).catch(function() {});
     }
@@ -566,10 +664,18 @@ namespace Jellyfin.Plugin.SkinManager.Services
         container.appendChild(a);
     }
 
-    var observer = new MutationObserver(function() { ensureMenuItem(); });
+    var _menuDebounce;
+    var observer = new MutationObserver(function() {
+        if (document.getElementById(MENU_ITEM_ID)) return;
+        if (_menuDebounce) return;
+        _menuDebounce = requestAnimationFrame(function() {
+            ensureMenuItem();
+            _menuDebounce = null;
+        });
+    });
     observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
 
-    function isDashboard() { return new RegExp('^#/(dashboard|configurationpage)(/|[?]|$)').test(window.location.hash); }
+    function isDashboard() { return new RegExp('^#/(dashboard|configurationpage|metadata)(/|[?]|$)').test(window.location.hash); }
     function isUnauthPage() { var h = window.location.hash; return !h || h === '#/' || /^#\/(login|selectserver|selectuser|addserver|signout)/.test(h); }
 
     function stripUserOverride() {
@@ -582,7 +688,10 @@ namespace Jellyfin.Plugin.SkinManager.Services
     var _pollKey = '--';
 
     function poll() {
-        var key = (isDashboard() || isUnauthPage()) ? null : getLsKey();
+        var dash = isDashboard();
+        var unauth = isUnauthPage();
+        
+        var key = (dash || unauth) ? null : getLsKey();
         if (key === _pollKey) return;
         _pollKey = key;
         stripUserOverride();
@@ -595,8 +704,34 @@ namespace Jellyfin.Plugin.SkinManager.Services
         e = document.getElementById('skinmanager-vars');  if (e) e.remove();
     }
 
-    setInterval(poll, 500);
-    window.addEventListener('hashchange', function() { _pollKey = '--'; poll(); });
+    function handleNavigationUser() {
+        if (isUnauthPage()) _cachedLsKey = null; 
+        poll();
+    }
+
+    window.addEventListener('hashchange', handleNavigationUser);
+    window.addEventListener('popstate', handleNavigationUser);
+
+    var origPush = history.pushState;
+    history.pushState = function() { 
+        origPush.apply(this, arguments); 
+        handleNavigationUser();
+    };
+
+    var origReplace = history.replaceState;
+    history.replaceState = function() { 
+        origReplace.apply(this, arguments); 
+        handleNavigationUser();
+    };
+
+    window.addEventListener('storage', function(e) {
+        if (e.key && e.key.indexOf('skinmanager') !== -1) {
+            _pollKey = '--'; 
+            poll();
+        }
+    });
+
+    poll();
 })();
 </script>
 ";
