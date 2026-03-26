@@ -12,6 +12,15 @@ namespace Jellyfin.Plugin.SkinManager.Configuration
         public int ConfigVersion { get; set; } = 0;
 
         /// <summary>
+        /// When true, users can override the server-wide theme with their own
+        /// choice via the "My Theme" user-settings page. Their preferences are
+        /// stored in browser localStorage; the server-injected JS reads that key
+        /// and substitutes the user's CSS on every page load.
+        /// Added in config version 5.
+        /// </summary>
+        public bool AllowUserThemes { get; set; } = false;
+
+        /// <summary>
         /// URL pointing to the skins repository JSON file.
         /// </summary>
         public string SkinUrl { get; set; } = "https://raw.githubusercontent.com/Jellyfin-PG/Skin-Manager-Themes/refs/heads/main/skins.json";
