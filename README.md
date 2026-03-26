@@ -76,6 +76,8 @@ Removing a theme clears the stored URL and variables. The next page load returns
 
 ## Changelog
 
+**1.4.2** — Preconnect for google fonts and imgur images.
+
 **1.4.1** — Preloading stylesheets, fixes and ordering optimization.
 
 **1.4.0** — Introduction of user skins.
