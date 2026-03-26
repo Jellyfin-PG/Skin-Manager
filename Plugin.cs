@@ -16,7 +16,7 @@ namespace Jellyfin.Plugin.SkinManager
         /// field is added to PluginConfiguration, then add a migration case
         /// in the switch block below to apply safe defaults for that version.
         /// </summary>
-        private const int CurrentConfigVersion = 4;
+        private const int CurrentConfigVersion = 5;
 
         public override string Name => "SkinManager";
 
@@ -68,6 +68,10 @@ namespace Jellyfin.Plugin.SkinManager
 
                     case 4:
                         break;
+
+                    case 5:
+                        // AllowUserThemes defaults to false — no migration needed.
+                        break;
                 }
 
                 Configuration.ConfigVersion = v;
@@ -76,6 +80,16 @@ namespace Jellyfin.Plugin.SkinManager
 
             if (dirty)
                 SaveConfiguration();
+        }
+
+        /// <summary>
+        /// Invalidates the injection cache whenever the admin saves new settings,
+        /// so the very next page request picks up the updated configuration.
+        /// </summary>
+        public override void SaveConfiguration()
+        {
+            Services.SkinInjector.InvalidateInjectionCache();
+            base.SaveConfiguration();
         }
 
         public IEnumerable<PluginPageInfo> GetPages()
@@ -88,6 +102,13 @@ namespace Jellyfin.Plugin.SkinManager
                     DisplayName = "Skin Manager",
                     EnableInMainMenu = true,
                     EmbeddedResourcePath = $"{GetType().Namespace}.Configuration.configPage.html"
+                },
+                new PluginPageInfo
+                {
+                    Name = "SkinManagerUserTheme",
+                    DisplayName = "My Theme",
+                    EnableInMainMenu = false,
+                    EmbeddedResourcePath = $"{GetType().Namespace}.Configuration.userThemePage.html"
                 }
             };
         }

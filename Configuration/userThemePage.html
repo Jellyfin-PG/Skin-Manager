@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>My Theme — SkinManager</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        html {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            color-scheme: dark;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif !important;
+            background: #101010 !important;
+            color: #d0d0d0 !important;
+            font-size: 14px !important;
+        }
+
+        @font-face {
+            font-family: 'Material Icons';
+            font-style: normal;
+            font-weight: 400;
+            font-display: block;
+            src: url(https://fonts.gstatic.com/s/materialicons/v142/flUhRq6tzZclQEJ-Vdg-IuiaDsNcIhQ8tQ.woff2) format('woff2');
+        }
+
+        .material-icons {
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .sm-topbar {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            padding: 4px 8px;
+            background: rgba(18, 18, 18, 0.97) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .sm-topbar-title {
+            font-size: .95em;
+            font-weight: 600;
+            opacity: .75;
+            margin-left: 6px;
+        }
+
+        .sm-nav-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: #fff;
+            cursor: pointer;
+            opacity: 0.76;
+            transition: background-color .2s, opacity .2s;
+            padding: 0;
+            flex-shrink: 0;
+        }
+
+        .sm-nav-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            opacity: 1;
+        }
+
+        .sm-nav-btn .material-icons {
+            font-size: 24px;
+            user-select: none;
+        }
+
+        #sm-loading {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(16, 16, 16, .85);
+            z-index: 9999;
+            transition: opacity .25s;
+        }
+
+        #sm-loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .sm-spinner {
+            width: 44px;
+            height: 44px;
+            border: 3px solid rgba(255, 255, 255, .12);
+            border-top-color: #00a4dc;
+            border-radius: 50%;
+            animation: sm-spin .7s linear infinite;
+        }
+
+        @keyframes sm-spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .content-primary {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5em 1.25em 4em;
+        }
+
+        h2 {
+            font-size: 1.4em;
+            font-weight: 300;
+            margin: 0 0 .25em;
+            color: #fff;
+        }
+
+        .itemsContainer {
+            display: block;
+        }
+
+        .itemsContainer.vertical-wrap {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            align-content: flex-start;
+            gap: 8px;
+            padding: 4px 0;
+        }
+
+        .card {
+            flex-shrink: 0;
+            position: relative;
+            cursor: default;
+        }
+
+        .overflowBackdropCard {
+            width: 220px;
+        }
+
+        .cardBox {
+            position: relative;
+            border-radius: 4px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .cardScalable {
+            position: relative;
+        }
+
+        .cardPadder {
+            padding-bottom: 56.25%;
+            position: relative;
+        }
+
+        .cardPadder-backdrop {
+            padding-bottom: 56.25%;
+        }
+
+        .cardContent {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+        }
+
+        .cardImageContainer {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .coveredImage {
+            background-size: cover;
+            background-position: center top;
+        }
+
+        .cardImageContainer img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top center;
+            display: block;
+        }
+
+        .cardFooter {
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.45);
+        }
+
+        .cardText {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: .82em;
+            line-height: 1.4;
+        }
+
+        .cardText-secondary {
+            opacity: .65;
+            font-size: .78em;
+        }
+
+        .card.selectedCard {
+            box-shadow: 0 0 0 3px #00a4dc;
+            border-radius: 4px;
+        }
+
+        .activeBar {
+            display: flex;
+            align-items: center;
+            gap: .75em;
+            padding: .6em 1em;
+            background: rgba(0, 164, 220, .1);
+            border: 1px solid rgba(0, 164, 220, .3);
+            border-radius: 4px;
+            margin-bottom: 1em;
+            font-size: .9em;
+        }
+
+        .activeDot {
+            width: 8px;
+            height: 8px;
+            background: #00e676;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .stateMsg {
+            width: 100%;
+            padding: 3em 1em;
+            text-align: center;
+            opacity: .45;
+        }
+
+        .emby-input,
+        input[type="text"],
+        input[type="number"],
+        select {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 4px;
+            color: inherit;
+            padding: 7px 10px;
+            font-family: inherit;
+            font-size: .9em;
+        }
+
+        input[type="text"] {
+            width: 100%;
+        }
+
+        .inputLabel,
+        .inputLabelUnfocused {
+            display: block;
+            font-size: .78em;
+            opacity: .6;
+            margin-bottom: 3px;
+        }
+
+        .inputContainer {
+            margin-bottom: .25em;
+        }
+
+        .emby-button,
+        button[is="emby-button"] {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: .4em 1em;
+            border-radius: 3px;
+            border: 1px solid transparent;
+            background: rgba(255, 255, 255, 0.09);
+            color: inherit;
+            cursor: pointer;
+            font-size: inherit;
+            font-family: inherit;
+            text-decoration: none;
+            transition: background .15s;
+        }
+
+        .emby-button:hover,
+        button[is="emby-button"]:hover {
+            background: rgba(255, 255, 255, 0.17);
+        }
+
+        .raised.button-submit {
+            background: #00a4dc;
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .raised.button-submit:hover {
+            background: #0090c8;
+        }
+
+        .emby-button:disabled,
+        button:disabled {
+            opacity: .45;
+            cursor: default;
+        }
+
+        #tagFilters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="sm-loading">
+        <div class="sm-spinner"></div>
+    </div>
+
+    <nav class="sm-topbar">
+        <button type="button" class="sm-nav-btn" title="Back to Preferences"
+            onclick="window.location.href='/web/index.html#/mypreferencesmenu'">
+            <span class="material-icons" aria-hidden="true">arrow_back</span>
+        </button>
+        <button type="button" class="sm-nav-btn" title="Home" onclick="window.location.href='/web/index.html'">
+            <span class="material-icons" aria-hidden="true">home</span>
+        </button>
+        <span class="sm-topbar-title">My Theme</span>
+    </nav>
+    <div id="SkinManagerUserThemePage" data-role="page" class="page type-interior smUserPage"
+        data-require="emby-input,emby-button,emby-select">
+
+        <div data-role="content">
+            <div class="content-primary">
+
+                <h2>My Theme</h2>
+                <p style="font-size:.85em;opacity:.55;margin-top:-.25em;margin-bottom:1em;" id="userGreeting"></p>
+
+                <div id="disabledNotice" style="display:none;padding:2em 1em;text-align:center;opacity:.6;">
+                    Your administrator has not enabled per-user theme selection.
+                </div>
+
+                <div id="mainContent">
+                    <div class="activeBar" id="activeBar" style="display:none">
+                        <div class="activeDot"></div>
+                        <span>Your theme: <strong id="activeName"></strong></span>
+                        <button is="emby-button" type="button" id="btnReset" class="emby-button"
+                            style="margin-left:auto">
+                            Reset to server default
+                        </button>
+                    </div>
+
+                    <div id="serverNotice" style="font-size:.82em;opacity:.5;margin-bottom:.75em;"></div>
+
+                    <div class="inputContainer" style="margin-bottom:.25em">
+                        <label class="inputLabel inputLabelUnfocused" for="searchInput">Search</label>
+                        <input type="text" id="searchInput" class="emby-input" placeholder="Search themes…" />
+                    </div>
+
+                    <div id="tagFilters"
+                        style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;margin-bottom:16px;"></div>
+
+                    <div id="themeGrid" class="itemsContainer vertical-wrap">
+                        <div class="stateMsg">Loading themes…</div>
+                    </div>
+
+                    <div style="margin-top:1.5em;display:flex;align-items:center;gap:1em;flex-wrap:wrap">
+                        <span id="pendingLabel" style="font-size:.85em;opacity:.6">No pending changes</span>
+                        <button is="emby-button" type="button" id="btnSave" class="raised button-submit emby-button"
+                            disabled>
+                            Save My Theme
+                        </button>
+                    </div>
+                    <p style="font-size:.8em;opacity:.45;margin-top:.75em">
+                        Your theme is stored in this browser only and overrides the server theme just for you.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            (function () {
+                var CACHE_CSS = 'skinmanager-user-v';
+                var MANIFEST_API = '/api/SkinManager/ManifestInfo';
+
+                function getLsKey() {
+                    try {
+                        var creds = JSON.parse(localStorage.getItem('jellyfin_credentials') || '{}');
+                        var srv = (creds.Servers || [])[0] || {};
+                        var uid = srv.UserId || '';
+                        var token = srv.AccessToken || '';
+                        return 'skinmanager-user-override' + (uid && token ? '-' + uid : '');
+                    } catch (e) { return 'skinmanager-user-override'; }
+                }
+
+                function authHeaders() {
+                    try {
+                        var creds = JSON.parse(localStorage.getItem('jellyfin_credentials') || '{}');
+                        var token = ((creds.Servers || [])[0] || {}).AccessToken || '';
+                        if (token) return { 'X-MediaBrowser-Token': token };
+                    } catch (e) { }
+                    return {};
+                }
+
+                function showLoading() { var l = document.getElementById('sm-loading'); if (l) l.classList.remove('hidden'); }
+                function hideLoading() { var l = document.getElementById('sm-loading'); if (l) l.classList.add('hidden'); }
+
+                var STYLE_TAG_OFF = 'display:inline-block;padding:5px 14px;border-radius:999px;border:1px solid rgba(255,255,255,0.28);background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.7);font-size:12px;line-height:1.4;cursor:pointer;user-select:none;box-sizing:border-box;';
+                var STYLE_TAG_ON = 'display:inline-block;padding:5px 14px;border-radius:999px;border:1px solid #00a4dc;background:#00a4dc;color:#fff;font-size:12px;line-height:1.4;cursor:pointer;user-select:none;box-sizing:border-box;font-weight:700;';
+
+                var state = {
+                    themes: [], selected: null, active: null,
+                    activeTags: [], query: '',
+                    themeVars: {}, pendingVars: null, pendingHasAddons: false,
+                    adminSkinName: '', manifestUrl: ''
+                };
+
+                function el(id) { return document.getElementById(id); }
+
+                function getSaved() {
+                    try { return JSON.parse(localStorage.getItem(getLsKey()) || 'null'); } catch (e) { return null; }
+                }
+
+                function safeParseJson(str, fallback) {
+                    try { return JSON.parse(str || '{}') || fallback; } catch (e) { return fallback; }
+                }
+
+                function toKebabCase(key) {
+                    key = (key || '').trim().replace(/^-+/, '');
+                    key = key.replace(/([a-z])([A-Z])/g, '$1-$2');
+                    return key.replace(/_/g, '-').toLowerCase();
+                }
+
+                function substituteVars(code, vars) {
+                    Object.keys(vars).forEach(function (key) {
+                        code = code.split('{{' + key + '}}').join(vars[key]);
+                    });
+                    return code;
+                }
+
+                function init() {
+                    showLoading();
+                    state.selected = null;
+                    state.pendingVars = null;
+
+                    fetch('/Users/Me', { headers: authHeaders() })
+                        .then(function (r) { return r.ok ? r.json() : null; })
+                        .then(function (user) {
+                            if (user && user.Name)
+                                el('userGreeting').textContent = 'Customise the theme for ' + user.Name + '.';
+                        }).catch(function () { });
+
+                    fetch(MANIFEST_API)
+                        .then(function (r) { return r.json(); })
+                        .then(function (info) {
+                            if (!info.AllowUserThemes) {
+                                el('disabledNotice').style.display = '';
+                                el('mainContent').style.display = 'none';
+                                hideLoading();
+                                return;
+                            }
+
+                            state.manifestUrl = info.ManifestUrl || '';
+                            state.adminSkinName = info.AdminSkinName || '';
+
+                            var notice = el('serverNotice');
+                            if (state.adminSkinName && state.adminSkinName !== 'Default') {
+                                notice.textContent = 'Your selection replaces the server default (' + state.adminSkinName + ') for you only.';
+                            } else {
+                                notice.textContent = 'No server-wide theme is set.';
+                            }
+
+                            var saved = getSaved();
+                            if (saved && saved.name) {
+                                state.active = saved;
+                                state.themeVars = saved.vars || {};
+                                el('activeName').textContent = saved.name;
+                                el('activeBar').style.display = 'flex';
+                            }
+
+                            updatePending();
+
+                            if (state.manifestUrl) {
+                                loadThemes(state.manifestUrl);
+                            } else {
+                                el('themeGrid').innerHTML = '<div class="stateMsg">No manifest URL configured by the admin.</div>';
+                                hideLoading();
+                            }
+                        })
+                        .catch(function (err) {
+                            el('themeGrid').innerHTML = '<div class="stateMsg">Could not reach server: ' + err.message + '</div>';
+                            hideLoading();
+                        });
+                }
+
+                function loadThemes(url) {
+                    el('themeGrid').innerHTML = '<div class="stateMsg">Loading themes…</div>';
+                    fetch(url)
+                        .then(function (r) {
+                            if (!r.ok) throw new Error('HTTP ' + r.status);
+                            return r.json();
+                        })
+                        .then(function (themes) {
+                            state.themes = themes;
+                            if (state.active && state.active.name) {
+                                var match = themes.find(function (t) { return t.name === state.active.name; });
+                                if (match) state.active = Object.assign({}, state.active, match);
+                            }
+                            buildTags(themes);
+                            render();
+                            hideLoading();
+                        })
+                        .catch(function (err) {
+                            el('themeGrid').innerHTML = '<div class="stateMsg">Could not load: ' + err.message + '</div>';
+                            hideLoading();
+                        });
+                }
+
+                function buildTags(themes) {
+                    var set = {};
+                    themes.forEach(function (t) { (t.tags || []).forEach(function (g) { set[g] = true; }); });
+                    state.activeTags = [];
+                    var c = el('tagFilters');
+                    c.innerHTML = '';
+                    Object.keys(set).sort().forEach(function (tag) {
+                        var b = document.createElement('span');
+                        b.setAttribute('style', STYLE_TAG_OFF);
+                        b.textContent = tag;
+                        b.addEventListener('click', function () {
+                            var i = state.activeTags.indexOf(tag);
+                            if (i === -1) { state.activeTags.push(tag); b.setAttribute('style', STYLE_TAG_ON); }
+                            else { state.activeTags.splice(i, 1); b.setAttribute('style', STYLE_TAG_OFF); }
+                            render();
+                        });
+                        c.appendChild(b);
+                    });
+                }
+
+                function render() {
+                    var q = state.query.toLowerCase();
+                    var filtered = state.themes.filter(function (t) {
+                        var mq = !q ||
+                            (t.name || '').toLowerCase().includes(q) ||
+                            (t.author || '').toLowerCase().includes(q) ||
+                            (t.description || '').toLowerCase().includes(q);
+                        var mt = state.activeTags.length === 0 ||
+                            state.activeTags.every(function (tag) { return (t.tags || []).includes(tag); });
+                        return mq && mt;
+                    });
+                    var grid = el('themeGrid');
+                    if (filtered.length === 0) { grid.innerHTML = '<div class="stateMsg">No themes match your search.</div>'; return; }
+                    grid.innerHTML = '';
+                    filtered.forEach(function (theme) { grid.appendChild(buildCard(theme)); });
+                }
+
+                function buildCard(theme) {
+                    var hasPending = state.selected !== null;
+                    var isSel = hasPending
+                        ? (state.selected && state.selected.name === (theme.name || ''))
+                        : (state.active && state.active.name === (theme.name || ''));
+
+                    var card = document.createElement('div');
+                    card.className = 'card overflowBackdropCard' + (isSel ? ' selectedCard' : '');
+                    card.style.cssText = 'min-width:200px;max-width:260px;cursor:default;';
+
+                    var cardBox = document.createElement('div');
+                    cardBox.className = 'cardBox';
+                    cardBox.style.position = 'relative';
+
+                    var cardScalable = document.createElement('div');
+                    cardScalable.className = 'cardScalable';
+                    var cardPadder = document.createElement('div');
+                    cardPadder.className = 'cardPadder cardPadder-backdrop';
+                    var cardContent = document.createElement('div');
+                    cardContent.className = 'cardContent';
+
+                    var imgContainer = document.createElement('div');
+                    imgContainer.className = 'cardImageContainer coveredImage';
+                    if (theme.previewUrl) {
+                        var img = document.createElement('img');
+                        img.src = theme.previewUrl;
+                        img.alt = theme.name || '';
+                        img.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:top center;display:block;cursor:zoom-in;';
+                        img.onerror = function () {
+                            img.remove();
+                            imgContainer.style.cssText += 'display:flex;align-items:center;justify-content:center;font-size:2.5em;opacity:.2;';
+                            imgContainer.textContent = '🎨';
+                        };
+                        img.title = 'Click to preview';
+                        img.addEventListener('click', function (e) { e.stopPropagation(); openPreviewModal(theme); });
+                        imgContainer.appendChild(img);
+                    } else {
+                        imgContainer.style.cssText += 'display:flex;align-items:center;justify-content:center;font-size:2.5em;opacity:.2;';
+                        imgContainer.textContent = '🎨';
+                    }
+
+                    cardContent.appendChild(imgContainer);
+                    cardPadder.appendChild(cardContent);
+                    cardScalable.appendChild(cardPadder);
+                    cardBox.appendChild(cardScalable);
+
+                    if (isSel) {
+                        var chk = document.createElement('div');
+                        chk.style.cssText = 'position:absolute;top:6px;right:6px;background:#00a4dc;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:bold;z-index:10;pointer-events:none;';
+                        chk.textContent = '✓';
+                        cardBox.appendChild(chk);
+                    }
+
+                    var footer = document.createElement('div');
+                    footer.className = 'cardFooter';
+
+                    var cardText = document.createElement('div');
+                    cardText.className = 'cardText';
+                    cardText.style.fontWeight = 'bold';
+                    cardText.textContent = theme.name || '';
+                    footer.appendChild(cardText);
+
+                    if (theme.author) {
+                        var authText = document.createElement('div');
+                        authText.className = 'cardText cardText-secondary';
+                        authText.textContent = 'by ' + theme.author;
+                        footer.appendChild(authText);
+                    }
+
+                    if (theme.description) {
+                        var descText = document.createElement('div');
+                        descText.className = 'cardText cardText-secondary';
+                        descText.style.cssText = 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:.8em;opacity:.7;margin-top:.2em';
+                        descText.textContent = theme.description;
+                        footer.appendChild(descText);
+                    }
+
+                    var btnRow = document.createElement('div');
+                    btnRow.style.cssText = 'display:flex;gap:.4em;margin-top:.6em;padding-bottom:.4em';
+
+                    var selBtn = document.createElement('button');
+                    selBtn.setAttribute('is', 'emby-button');
+                    selBtn.className = 'raised emby-button' + (isSel ? ' button-submit' : '');
+                    selBtn.style.cssText = 'flex:1;padding:.35em .5em;font-size:.78em';
+                    selBtn.textContent = isSel ? '✓ Selected' : 'Select';
+                    selBtn.disabled = isSel;
+                    selBtn.addEventListener('click', function () { pick(theme); });
+                    btnRow.appendChild(selBtn);
+
+                    if (isSel && ((theme.vars || []).length > 0)) {
+                        var cfgBtn = document.createElement('button');
+                        cfgBtn.setAttribute('is', 'emby-button');
+                        cfgBtn.className = 'emby-button';
+                        cfgBtn.style.cssText = 'padding:.35em .6em;font-size:.78em;border:1px solid rgba(255,255,255,.2)';
+                        cfgBtn.textContent = '⚙';
+                        cfgBtn.title = 'Configure theme variables';
+                        cfgBtn.addEventListener('click', function () { openVarsModal(theme); });
+                        btnRow.appendChild(cfgBtn);
+                    }
+
+                    if (theme.sourceUrl) {
+                        var srcBtn = document.createElement('a');
+                        srcBtn.className = 'emby-button';
+                        srcBtn.style.cssText = 'padding:.35em .6em;font-size:.78em;border:1px solid rgba(255,255,255,.2)';
+                        srcBtn.textContent = '↗';
+                        srcBtn.title = 'View source';
+                        srcBtn.href = theme.sourceUrl;
+                        srcBtn.target = '_blank';
+                        srcBtn.rel = 'noopener noreferrer';
+                        btnRow.appendChild(srcBtn);
+                    }
+
+                    footer.appendChild(btnRow);
+                    cardBox.appendChild(footer);
+                    card.appendChild(cardBox);
+                    return card;
+                }
+
+                function pick(theme) {
+                    state.selected = theme;
+                    state.pendingHasAddons = false;
+                    if (theme.cssUrl) {
+                        fetch(theme.cssUrl).then(function (r) { return r.text(); }).then(function (text) {
+                            state.pendingHasAddons = /@sm-import-if/.test(text);
+                        }).catch(function () { });
+                    }
+                    updatePending();
+                    render();
+                    el('btnSave').disabled = false;
+                }
+
+                function updatePending() {
+                    var lbl = el('pendingLabel');
+                    if (state.selected) {
+                        lbl.textContent = 'Pending: ' + state.selected.name;
+                        lbl.style.color = '#00a4dc';
+                    } else if (state.pendingVars !== null) {
+                        var name = state.active ? state.active.name : 'theme';
+                        lbl.textContent = 'Pending variable changes — ' + name;
+                        lbl.style.color = '#00a4dc';
+                    } else if (state.active) {
+                        lbl.textContent = 'Your theme: ' + state.active.name;
+                        lbl.style.color = '';
+                    } else {
+                        lbl.textContent = 'No pending changes';
+                        lbl.style.color = '';
+                    }
+                }
+
+                function doSave() {
+                    if (!state.selected && state.pendingVars === null) return;
+                    var theme = state.selected || state.active;
+                    if (!theme) return;
+                    var vars = state.pendingVars !== null ? state.pendingVars : state.themeVars;
+
+                    var override = {
+                        name: theme.name || '',
+                        cssUrl: theme.cssUrl || '',
+                        version: theme.version || '',
+                        vars: vars || {}
+                    };
+                    localStorage.setItem(getLsKey(), JSON.stringify(override));
+
+                    applyPreview(override);
+
+                    state.active = override;
+                    state.themeVars = vars;
+                    state.selected = null;
+                    state.pendingVars = null;
+                    el('activeName').textContent = override.name;
+                    el('activeBar').style.display = 'flex';
+                    el('btnSave').disabled = true;
+                    updatePending();
+                    render();
+                }
+
+                function doReset() {
+                    localStorage.removeItem(getLsKey());
+                    ['skinmanager-user-theme', 'skinmanager-user-vars'].forEach(function (id) {
+                        var e = document.getElementById(id); if (e) e.remove();
+                    });
+                    state.active = null;
+                    state.selected = null;
+                    state.themeVars = {};
+                    state.pendingVars = null;
+                    el('activeName').textContent = '';
+                    el('activeBar').style.display = 'none';
+                    el('btnSave').disabled = true;
+                    updatePending();
+                    render();
+                }
+
+                function toKebabCase(key) {
+                    key = (key || '').trim().replace(/^-+/, '');
+                    key = key.replace(/([a-z])([A-Z])/g, '$1-$2');
+                    return key.replace(/_/g, '-').toLowerCase();
+                }
+
+                function substituteVars(code, vars) {
+                    Object.keys(vars).forEach(function (key) {
+                        code = code.split('{{' + key + '}}').join(vars[key] || '');
+                    });
+                    return code;
+                }
+
+                function cachedFetch(url, cacheName) {
+                    if (!window.caches) return fetch(url).then(function (r) { return r.text(); });
+                    return caches.open(cacheName).then(function (cache) {
+                        return cache.match(url).then(function (cached) {
+                            var net = fetch(url).then(function (r) {
+                                cache.put(url, r.clone()); return r.text();
+                            }).catch(function () { return null; });
+                            if (cached) { net.catch(function () { }); return cached.text(); }
+                            return net.then(function (t) { return t || ''; });
+                        });
+                    });
+                }
+
+                function applyPreview(override) {
+                    var cssUrl = override.cssUrl || '';
+                    var version = override.version || '0';
+                    var vars = override.vars || {};
+
+                    ['skinmanager-theme', 'skinmanager-vars',
+                        'skinmanager-user-theme', 'skinmanager-user-vars'].forEach(function (id) {
+                            var e = document.getElementById(id); if (e) e.remove();
+                        });
+
+                    var varKeys = Object.keys(vars);
+                    if (varKeys.length > 0) {
+                        var cssVars = ':root, body {\n';
+                        varKeys.forEach(function (k) {
+                            if (vars[k] !== undefined && vars[k] !== '')
+                                cssVars += '  --' + toKebabCase(k) + ': ' + vars[k] + ' !important;\n';
+                        });
+                        cssVars += '}';
+                        var sEl = document.createElement('style');
+                        sEl.id = 'skinmanager-user-vars';
+                        sEl.textContent = cssVars;
+                        document.head.appendChild(sEl);
+                    }
+
+                    if (!cssUrl) return;
+
+                    cachedFetch(cssUrl, CACHE_CSS + version).then(function (code) {
+                        code = substituteVars(code, vars);
+                        var existing = document.getElementById('skinmanager-user-theme');
+                        if (existing) existing.remove();
+                        try {
+                            var blob = new Blob([code], { type: 'text/css' });
+                            var link = document.createElement('link');
+                            link.rel = 'stylesheet'; link.id = 'skinmanager-user-theme';
+                            link.href = URL.createObjectURL(blob);
+                            document.head.appendChild(link);
+                        } catch (e) {
+                            var s = document.createElement('style');
+                            s.id = 'skinmanager-user-theme'; s.textContent = code;
+                            document.head.appendChild(s);
+                        }
+                    }).catch(function (e) { console.warn('[SkinManager] Preview failed', cssUrl, e); });
+                }
+
+                function openPreviewModal(item) {
+                    var existing = document.getElementById('smPreviewOverlay');
+                    if (existing) existing.remove();
+                    var overlay = document.createElement('div');
+                    overlay.id = 'smPreviewOverlay';
+                    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:100001;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;cursor:zoom-out;';
+                    var imgWrap = document.createElement('div');
+                    imgWrap.style.cssText = 'position:relative;max-width:92vw;max-height:82vh;border-radius:10px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,0.8);';
+                    var img = document.createElement('img');
+                    img.src = item.previewUrl; img.alt = item.name;
+                    img.style.cssText = 'display:block;max-width:92vw;max-height:82vh;object-fit:contain;border-radius:10px;';
+                    imgWrap.appendChild(img);
+                    var info = document.createElement('div');
+                    info.style.cssText = 'margin-top:14px;text-align:center;';
+                    var title = document.createElement('div');
+                    title.style.cssText = 'font-size:1.1em;font-weight:600;color:#fff;';
+                    title.textContent = item.name;
+                    info.appendChild(title);
+                    if (item.author) {
+                        var author = document.createElement('div');
+                        author.style.cssText = 'font-size:.82em;opacity:.55;margin-top:3px;';
+                        author.textContent = 'by ' + item.author;
+                        info.appendChild(author);
+                    }
+                    overlay.appendChild(imgWrap);
+                    overlay.appendChild(info);
+                    overlay.addEventListener('click', function () { overlay.remove(); });
+                    imgWrap.addEventListener('click', function (e) { e.stopPropagation(); });
+                    document.addEventListener('keydown', function onKey(e) {
+                        if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onKey); }
+                    });
+                    document.body.appendChild(overlay);
+                }
+
+                function buildColorInput(savedValue, defaultValue, allowGradient) {
+                    var initial = (savedValue || defaultValue || '#000000').trim();
+
+                    function toHex(n) { return Math.round(Math.max(0, Math.min(255, n))).toString(16).padStart(2, '0'); }
+                    function toStr(r, g, b, a) { return a >= 1 ? '#' + toHex(r) + toHex(g) + toHex(b) : 'rgba(' + Math.round(r) + ', ' + Math.round(g) + ', ' + Math.round(b) + ', ' + Math.round(a * 100) / 100 + ')'; }
+
+                    function parseColor(str) {
+                        str = (str || '').trim();
+                        var c = { r: 0, g: 0, b: 0, a: 1 }, m;
+                        m = str.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)(?:[,\/\s]+([\d.]+))?\s*\)/i);
+                        if (m) { c.r = parseInt(m[1]); c.g = parseInt(m[2]); c.b = parseInt(m[3]); c.a = m[4] !== undefined ? parseFloat(m[4]) : 1; return c; }
+                        m = str.match(/^#([0-9a-f]{8})$/i);
+                        if (m) { c.r = parseInt(m[1].slice(0, 2), 16); c.g = parseInt(m[1].slice(2, 4), 16); c.b = parseInt(m[1].slice(4, 6), 16); c.a = parseInt(m[1].slice(6, 8), 16) / 255; return c; }
+                        m = str.match(/^#([0-9a-f]{6})$/i);
+                        if (m) { c.r = parseInt(m[1].slice(0, 2), 16); c.g = parseInt(m[1].slice(2, 4), 16); c.b = parseInt(m[1].slice(4, 6), 16); return c; }
+                        m = str.match(/^#([0-9a-f]{3})$/i);
+                        if (m) { c.r = parseInt(m[1][0] + m[1][0], 16); c.g = parseInt(m[1][1] + m[1][1], 16); c.b = parseInt(m[1][2] + m[1][2], 16); return c; }
+                        return c;
+                    }
+
+                    function isGradient(str) { return /^(linear|radial|conic)-gradient\(/.test((str || '').trim()); }
+
+                    function parseGradientStops(str) {
+                        var stops = [];
+                        var inner = str.replace(/^(linear|radial|conic)-gradient\(\s*/, '').replace(/\s*\)$/, '');
+                        var chunks = inner.split(/,(?![^()]*\))/);
+                        var colorChunks = chunks.filter(function (ch) { return /rgba?\(|#[0-9a-f]/i.test(ch.trim()); });
+                        colorChunks.forEach(function (ch) {
+                            ch = ch.trim();
+                            var posMatch = ch.match(/([\d.]+%)\s*$/);
+                            var pos = posMatch ? parseFloat(posMatch[1]) : null;
+                            var colorPart = posMatch ? ch.slice(0, ch.lastIndexOf(posMatch[1])).trim() : ch;
+                            stops.push({ color: colorPart, pos: pos });
+                        });
+                        if (stops.length < 2) { stops = [{ color: '#000000', pos: 0 }, { color: '#ffffff', pos: 100 }]; }
+                        return stops;
+                    }
+
+                    function parseGradientDir(str) {
+                        var m = str.match(/^linear-gradient\(\s*([^,]+),/);
+                        if (!m) return '180deg';
+                        var d = m[1].trim();
+                        if (/deg/.test(d)) return d;
+                        if (d === 'to bottom') return '180deg'; if (d === 'to top') return '0deg';
+                        if (d === 'to right') return '90deg'; if (d === 'to left') return '270deg';
+                        if (d === 'to bottom right') return '135deg'; if (d === 'to bottom left') return '225deg';
+                        return '180deg';
+                    }
+
+                    function buildGradientStr(type, dir, stops) {
+                        var stopsStr = stops.map(function (s) { return s.color + (s.pos !== null ? ' ' + s.pos + '%' : ''); }).join(', ');
+                        if (type === 'radial') return 'radial-gradient(circle, ' + stopsStr + ')';
+                        if (type === 'conic') return 'conic-gradient(from ' + dir + ', ' + stopsStr + ')';
+                        return 'linear-gradient(' + dir + ', ' + stopsStr + ')';
+                    }
+
+                    var MODE_SOLID = 'solid', MODE_GRADIENT = 'gradient';
+                    var mode = (isGradient(initial) && allowGradient !== false) ? MODE_GRADIENT : MODE_SOLID;
+                    var solidColor = mode === MODE_SOLID ? parseColor(initial) : { r: 0, g: 164, b: 220, a: 1 };
+                    var gradStops = mode === MODE_GRADIENT ? parseGradientStops(initial) : [{ color: '#00a4dc', pos: 0 }, { color: '#0066aa', pos: 100 }];
+                    var gradType = mode === MODE_GRADIENT ? (initial.startsWith('radial') ? 'radial' : initial.startsWith('conic') ? 'conic' : 'linear') : 'linear';
+                    var gradDir = mode === MODE_GRADIENT ? parseGradientDir(initial) : '180deg';
+
+                    var wrap = document.createElement('div'); wrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
+                    var hidden = document.createElement('input'); hidden.type = 'hidden'; hidden.name = 'var-color-value';
+
+                    var modeRow = document.createElement('div'); modeRow.style.cssText = 'display:flex;gap:4px;';
+                    function modeBtn(label, val) {
+                        var b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.dataset.mode = val;
+                        b.style.cssText = 'flex:1;padding:4px 8px;border-radius:5px;border:1px solid rgba(255,255,255,0.14);font-size:11px;cursor:pointer;transition:all .15s;background:' + (mode === val ? '#00a4dc' : 'rgba(255,255,255,0.06)') + ';color:' + (mode === val ? '#fff' : 'rgba(255,255,255,0.7)') + ';';
+                        b.addEventListener('click', function () {
+                            mode = val;
+                            modeRow.querySelectorAll('button').forEach(function (x) { var act = x.dataset.mode === val; x.style.background = act ? '#00a4dc' : 'rgba(255,255,255,0.06)'; x.style.color = act ? '#fff' : 'rgba(255,255,255,0.7)'; });
+                            solidPanel.style.display = val === MODE_SOLID ? 'flex' : 'none';
+                            gradPanel.style.display = val === MODE_GRADIENT ? 'flex' : 'none';
+                            updateValue();
+                        });
+                        return b;
+                    }
+                    modeRow.appendChild(modeBtn('Solid', MODE_SOLID));
+                    if (allowGradient !== false) modeRow.appendChild(modeBtn('Gradient', MODE_GRADIENT));
+
+                    var swatch = document.createElement('div');
+                    swatch.style.cssText = 'height:28px;border-radius:5px;border:1px solid rgba(255,255,255,0.14);background-image:linear-gradient(45deg,#666 25%,transparent 25%),linear-gradient(-45deg,#666 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#666 75%),linear-gradient(-45deg,transparent 75%,#666 75%);background-size:10px 10px;background-position:0 0,0 5px,5px -5px,-5px 0;position:relative;overflow:hidden;';
+                    var swatchInner = document.createElement('div'); swatchInner.style.cssText = 'position:absolute;inset:0;';
+                    swatch.appendChild(swatchInner);
+
+                    var valueDisplay = document.createElement('div'); valueDisplay.style.cssText = 'font-size:10px;opacity:0.4;font-family:monospace;word-break:break-all;';
+
+                    function updateValue() {
+                        var val;
+                        if (mode === MODE_SOLID) {
+                            var hex = solidPicker.value, a = parseFloat(solidAlpha.value);
+                            var r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+                            solidAlphaLabel.textContent = 'Opacity ' + Math.round(a * 100) + '%';
+                            val = toStr(r, g, b, a);
+                        } else { val = buildGradientStr(gradType, gradDir, gradStops); }
+                        hidden.value = val; swatchInner.style.background = val; valueDisplay.textContent = val;
+                    }
+
+                    var solidPanel = document.createElement('div'); solidPanel.style.cssText = 'flex-direction:column;gap:6px;display:' + (mode === MODE_SOLID ? 'flex' : 'none') + ';';
+                    var solidRow1 = document.createElement('div'); solidRow1.style.cssText = 'display:flex;gap:8px;align-items:center;';
+                    var solidPicker = document.createElement('input'); solidPicker.type = 'color'; solidPicker.name = 'var-color-hex';
+                    solidPicker.value = '#' + toHex(solidColor.r) + toHex(solidColor.g) + toHex(solidColor.b);
+                    solidPicker.style.cssText = 'width:44px;height:34px;padding:2px 3px;border:1px solid rgba(255,255,255,0.14);border-radius:5px;background:rgba(255,255,255,0.06);cursor:pointer;flex-shrink:0;';
+                    var solidHexInput = document.createElement('input'); solidHexInput.type = 'text'; solidHexInput.name = 'var-color-hex-text';
+                    solidHexInput.style.cssText = 'flex:1;padding:5px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:5px;color:inherit;font-size:12px;font-family:monospace;';
+                    solidHexInput.value = solidPicker.value;
+                    solidPicker.addEventListener('input', function () { solidHexInput.value = solidPicker.value; updateValue(); });
+                    solidHexInput.addEventListener('input', function () {
+                        var v = solidHexInput.value.trim();
+                        if (/^#[0-9a-f]{6}$/i.test(v) || /^#[0-9a-f]{3}$/i.test(v)) solidPicker.value = v;
+                        updateValue();
+                    });
+                    solidRow1.appendChild(solidPicker); solidRow1.appendChild(solidHexInput);
+
+                    var solidRow2 = document.createElement('div'); solidRow2.style.cssText = 'display:flex;gap:8px;align-items:center;';
+                    var solidAlphaLabel = document.createElement('div'); solidAlphaLabel.style.cssText = 'font-size:11px;opacity:0.55;flex-shrink:0;width:72px;';
+                    var solidAlpha = document.createElement('input'); solidAlpha.type = 'range'; solidAlpha.min = '0'; solidAlpha.max = '1'; solidAlpha.step = '0.01'; solidAlpha.name = 'var-color-alpha'; solidAlpha.value = String(solidColor.a);
+                    solidAlpha.style.cssText = 'flex:1;cursor:pointer;accent-color:#00a4dc;';
+                    solidAlpha.addEventListener('input', updateValue);
+                    solidRow2.appendChild(solidAlphaLabel); solidRow2.appendChild(solidAlpha);
+                    solidPanel.appendChild(solidRow1); solidPanel.appendChild(solidRow2);
+
+                    var gradPanel = document.createElement('div'); gradPanel.style.cssText = 'flex-direction:column;gap:8px;display:' + (mode === MODE_GRADIENT ? 'flex' : 'none') + ';';
+                    var gradTypeRow = document.createElement('div'); gradTypeRow.style.cssText = 'display:flex;gap:4px;';
+                    ['linear', 'radial', 'conic'].forEach(function (t) {
+                        var b = document.createElement('button'); b.type = 'button'; b.textContent = t.charAt(0).toUpperCase() + t.slice(1); b.dataset.gtype = t;
+                        b.style.cssText = 'flex:1;padding:3px 6px;border-radius:4px;border:1px solid rgba(255,255,255,0.14);font-size:11px;cursor:pointer;background:' + (gradType === t ? 'rgba(0,164,220,0.25)' : 'rgba(255,255,255,0.06)') + ';color:inherit;';
+                        b.addEventListener('click', function () { gradType = t; gradTypeRow.querySelectorAll('[data-gtype]').forEach(function (x) { x.style.background = x.dataset.gtype === t ? 'rgba(0,164,220,0.25)' : 'rgba(255,255,255,0.06)'; }); gradDirRow.style.display = t === 'radial' ? 'none' : 'flex'; updateValue(); });
+                        gradTypeRow.appendChild(b);
+                    });
+
+                    var gradDirRow = document.createElement('div'); gradDirRow.style.cssText = 'display:' + (gradType === 'radial' ? 'none' : 'flex') + ';flex-direction:column;gap:4px;';
+                    var gradDirLabel = document.createElement('div'); gradDirLabel.style.cssText = 'font-size:11px;opacity:0.55;'; gradDirLabel.textContent = 'Direction';
+                    var gradDirBtns = document.createElement('div'); gradDirBtns.style.cssText = 'display:flex;flex-wrap:wrap;gap:3px;';
+                    var DIRS = [['↑', '0deg'], ['↗', '45deg'], ['→', '90deg'], ['↘', '135deg'], ['↓', '180deg'], ['↙', '225deg'], ['←', '270deg'], ['↖', '315deg']];
+                    DIRS.forEach(function (d) {
+                        var b = document.createElement('button'); b.type = 'button'; b.textContent = d[0]; b.dataset.deg = d[1]; b.title = d[1];
+                        b.style.cssText = 'width:28px;height:28px;border-radius:4px;border:1px solid rgba(255,255,255,0.14);font-size:14px;cursor:pointer;background:' + (gradDir === d[1] ? 'rgba(0,164,220,0.3)' : 'rgba(255,255,255,0.06)') + ';color:inherit;';
+                        b.addEventListener('click', function () { gradDir = d[1]; gradDirBtns.querySelectorAll('[data-deg]').forEach(function (x) { x.style.background = x.dataset.deg === d[1] ? 'rgba(0,164,220,0.3)' : 'rgba(255,255,255,0.06)'; }); updateValue(); });
+                        gradDirBtns.appendChild(b);
+                    });
+                    var gradDirCustomRow = document.createElement('div'); gradDirCustomRow.style.cssText = 'display:flex;gap:6px;align-items:center;';
+                    var gradDirCustomLabel = document.createElement('div'); gradDirCustomLabel.style.cssText = 'font-size:11px;opacity:0.55;flex-shrink:0;'; gradDirCustomLabel.textContent = 'Custom:';
+                    var gradDirCustom = document.createElement('input'); gradDirCustom.type = 'range'; gradDirCustom.min = '0'; gradDirCustom.max = '360'; gradDirCustom.step = '1'; gradDirCustom.value = parseInt(gradDir); gradDirCustom.style.cssText = 'flex:1;cursor:pointer;accent-color:#00a4dc;';
+                    var gradDirCustomVal = document.createElement('div'); gradDirCustomVal.style.cssText = 'font-size:11px;font-family:monospace;width:40px;flex-shrink:0;'; gradDirCustomVal.textContent = gradDir;
+                    gradDirCustom.addEventListener('input', function () { gradDir = gradDirCustom.value + 'deg'; gradDirCustomVal.textContent = gradDir; gradDirBtns.querySelectorAll('[data-deg]').forEach(function (x) { x.style.background = 'rgba(255,255,255,0.06)'; }); updateValue(); });
+                    gradDirCustomRow.appendChild(gradDirCustomLabel); gradDirCustomRow.appendChild(gradDirCustom); gradDirCustomRow.appendChild(gradDirCustomVal);
+                    gradDirRow.appendChild(gradDirLabel); gradDirRow.appendChild(gradDirBtns); gradDirRow.appendChild(gradDirCustomRow);
+
+                    var stopsContainer = document.createElement('div'); stopsContainer.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
+                    var stopsLabel = document.createElement('div'); stopsLabel.style.cssText = 'display:flex;justify-content:space-between;align-items:center;';
+                    var stopsTitle = document.createElement('div'); stopsTitle.style.cssText = 'font-size:11px;opacity:0.55;'; stopsTitle.textContent = 'Color stops';
+                    var addStopBtn = document.createElement('button'); addStopBtn.type = 'button'; addStopBtn.textContent = '+ Add stop';
+                    addStopBtn.style.cssText = 'font-size:11px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.06);color:inherit;cursor:pointer;';
+                    stopsLabel.appendChild(stopsTitle); stopsLabel.appendChild(addStopBtn);
+                    var stopsList = document.createElement('div'); stopsList.style.cssText = 'display:flex;flex-direction:column;gap:5px;';
+
+                    function renderStop(stop, idx) {
+                        var stopRow = document.createElement('div'); stopRow.style.cssText = 'display:flex;gap:6px;align-items:center;';
+                        var stopPicker = document.createElement('input'); stopPicker.type = 'color'; stopPicker.value = stop.color.startsWith('#') ? stop.color : '#000000'; stopPicker.style.cssText = 'width:34px;height:28px;padding:1px 2px;border:1px solid rgba(255,255,255,0.14);border-radius:4px;background:rgba(255,255,255,0.06);cursor:pointer;flex-shrink:0;';
+                        var stopAlpha = document.createElement('input'); stopAlpha.type = 'range'; stopAlpha.min = '0'; stopAlpha.max = '1'; stopAlpha.step = '0.01'; var sc = parseColor(stop.color); stopAlpha.value = String(sc.a); stopAlpha.style.cssText = 'flex:1;cursor:pointer;accent-color:#00a4dc;';
+                        var stopPos = document.createElement('input'); stopPos.type = 'number'; stopPos.min = '0'; stopPos.max = '100'; stopPos.step = '1'; stopPos.value = stop.pos !== null ? stop.pos : Math.round(idx / (gradStops.length - 1 || 1) * 100); stopPos.style.cssText = 'width:44px;padding:3px 5px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:4px;color:inherit;font-size:11px;text-align:center;';
+                        var stopDel = document.createElement('button'); stopDel.type = 'button'; stopDel.textContent = '✕'; stopDel.style.cssText = 'width:22px;height:22px;border-radius:4px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);cursor:pointer;font-size:11px;flex-shrink:0;'; if (gradStops.length <= 2) stopDel.disabled = true;
+                        function syncStop() { var hex = stopPicker.value, a = parseFloat(stopAlpha.value); var r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16); stop.color = toStr(r, g, b, a); stop.pos = parseInt(stopPos.value) || 0; updateValue(); }
+                        stopPicker.addEventListener('input', syncStop); stopAlpha.addEventListener('input', syncStop); stopPos.addEventListener('input', syncStop);
+                        stopDel.addEventListener('click', function () { if (gradStops.length > 2) { gradStops.splice(idx, 1); renderStops(); updateValue(); } });
+                        stopRow.appendChild(stopPicker); stopRow.appendChild(stopAlpha); stopRow.appendChild(stopPos); stopRow.appendChild(stopDel);
+                        return stopRow;
+                    }
+                    function renderStops() { stopsList.innerHTML = ''; gradStops.forEach(function (stop, idx) { stopsList.appendChild(renderStop(stop, idx)); }); }
+                    renderStops();
+                    addStopBtn.addEventListener('click', function () { gradStops.push({ color: '#888888', pos: 100 }); renderStops(); updateValue(); });
+                    stopsContainer.appendChild(stopsLabel); stopsContainer.appendChild(stopsList);
+                    gradPanel.appendChild(gradTypeRow); gradPanel.appendChild(gradDirRow); gradPanel.appendChild(stopsContainer);
+
+                    wrap.appendChild(modeRow); wrap.appendChild(swatch); wrap.appendChild(solidPanel); wrap.appendChild(gradPanel); wrap.appendChild(valueDisplay); wrap.appendChild(hidden);
+                    updateValue();
+                    return wrap;
+                }
+
+                function openVarsModal(theme) {
+                    var vars = (theme.vars || []);
+                    var saved = state.pendingVars !== null ? state.pendingVars : state.themeVars;
+                    var existing = document.getElementById('smVarsOverlay');
+                    if (existing) existing.remove();
+
+                    var overlay = document.createElement('div');
+                    overlay.id = 'smVarsOverlay';
+                    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+                    var dialog = document.createElement('div');
+                    dialog.style.cssText = 'color-scheme:dark;background:#1a1d21;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:28px;width:100%;max-width:440px;box-shadow:0 24px 60px rgba(0,0,0,0.7);overflow-y:auto;max-height:90vh;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.3) transparent;';
+
+                    var titleEl = document.createElement('div'); titleEl.style.cssText = 'font-size:1.05em;font-weight:bold;margin-bottom:4px;color:#fff;'; titleEl.textContent = theme.name || '';
+                    dialog.appendChild(titleEl);
+                    var subtitle = document.createElement('div'); subtitle.style.cssText = 'font-size:.78em;opacity:.5;margin-bottom:20px;'; subtitle.textContent = 'Configure theme variables.';
+                    dialog.appendChild(subtitle);
+
+                    var container = document.createElement('div'); container.id = 'smVarsContainer';
+                    vars.forEach(function (v) {
+                        var row = document.createElement('div'); row.style.marginBottom = '16px';
+                        var lbl = document.createElement('div'); lbl.style.cssText = 'font-size:.82em;font-weight:600;margin-bottom:3px;'; lbl.textContent = v.name || v.key || '';
+                        row.appendChild(lbl);
+                        if (v.description) {
+                            var desc = document.createElement('div'); desc.style.cssText = 'font-size:.72em;opacity:.5;margin-bottom:5px;'; desc.textContent = v.description;
+                            row.appendChild(desc);
+                        }
+                        var inputType = (v.type || 'text').toLowerCase();
+                        var input;
+                        if (inputType === 'boolean') {
+                            var trueVal = v.trueValue !== undefined ? v.trueValue : 'true';
+                            var falseVal = v.falseValue !== undefined ? v.falseValue : 'false';
+                            var savedVal = saved[v.key] !== undefined ? saved[v.key] : (v.default === 'true' || v.default === trueVal ? trueVal : falseVal);
+                            input = document.createElement('select');
+                            [['true', trueVal], ['false', falseVal]].forEach(function (pair) {
+                                var o = document.createElement('option'); o.value = pair[1]; o.textContent = pair[0]; o.style.background = '#1a1d21'; o.style.color = '#fff';
+                                input.appendChild(o);
+                            });
+                            input.value = savedVal;
+                            input.name = 'sm-var-' + v.key; input.id = 'sm-var-' + v.key;
+                            input.style.cssText = 'color-scheme:dark;width:100%;padding:7px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:5px;color:inherit;font-size:.85em;font-family:inherit;box-sizing:border-box;';
+                            input.dataset.varKey = v.key;
+                            row.appendChild(input);
+                        } else if (inputType === 'color') {
+                            var colorWidget = buildColorInput(saved[v.key] !== undefined ? saved[v.key] : null, v.default || '#000000', v.allowGradient !== false);
+                            colorWidget.querySelector('input[type=hidden]').dataset.varKey = v.key;
+                            row.appendChild(colorWidget);
+                        } else {
+                            input = document.createElement('input');
+                            input.type = inputType === 'number' ? 'number' : 'text';
+                            input.value = saved[v.key] !== undefined ? saved[v.key] : (v.default || '');
+                            input.placeholder = v.default || '';
+                            input.name = 'sm-var-' + v.key; input.id = 'sm-var-' + v.key;
+                            input.style.cssText = 'width:100%;padding:7px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:5px;color:inherit;font-size:.85em;font-family:inherit;box-sizing:border-box;';
+                            input.dataset.varKey = v.key;
+                            row.appendChild(input);
+                        }
+                        container.appendChild(row);
+                    });
+                    dialog.appendChild(container);
+
+                    var actions = document.createElement('div'); actions.style.cssText = 'display:flex;gap:8px;margin-top:20px;justify-content:flex-end;';
+                    var cancelBtn = document.createElement('button'); cancelBtn.setAttribute('is', 'emby-button'); cancelBtn.className = 'emby-button'; cancelBtn.textContent = 'Cancel';
+                    cancelBtn.addEventListener('click', function () { overlay.remove(); });
+                    var saveBtn = document.createElement('button'); saveBtn.setAttribute('is', 'emby-button'); saveBtn.className = 'raised button-submit emby-button'; saveBtn.textContent = 'Save';
+                    saveBtn.addEventListener('click', function () {
+                        var values = {};
+                        container.querySelectorAll('[data-var-key]').forEach(function (i) {
+                            if (i.type === 'hidden' || !values.hasOwnProperty(i.dataset.varKey)) {
+                                values[i.dataset.varKey] = i.value;
+                            }
+                        });
+                        state.pendingVars = values;
+                        el('btnSave').disabled = false;
+                        updatePending();
+                        overlay.remove();
+                        render();
+                    });
+                    actions.appendChild(cancelBtn); actions.appendChild(saveBtn);
+                    dialog.appendChild(actions);
+                    overlay.appendChild(dialog);
+                    overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.remove(); });
+                    document.body.appendChild(overlay);
+                }
+
+                el('searchInput').addEventListener('input', function () { state.query = this.value; render(); });
+                el('btnSave').addEventListener('click', doSave);
+                el('btnReset').addEventListener('click', doReset);
+
+                document.addEventListener('DOMContentLoaded', init);
+
+            })();
+        </script>
+
+    </div>
+</body>
+
+</html>

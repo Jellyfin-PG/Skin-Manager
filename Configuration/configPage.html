@@ -4,16 +4,103 @@
 <head>
     <title>Skin Manager</title>
     <style>
-        .skinManagerPage .cardImageContainer {
-            height: 130px !important;
-            background-size: cover !important;
-            background-position: top center !important;
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        .itemsContainer {
+            display: block;
+        }
+
+        .itemsContainer.vertical-wrap {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            align-content: flex-start;
+            gap: 8px;
+            padding: 4px 0;
+        }
+
+        .card {
+            flex-shrink: 0;
+            position: relative;
+            cursor: default;
+        }
+
+        .overflowBackdropCard {
+            width: 220px;
+        }
+
+        .cardBox {
+            position: relative;
+            border-radius: 4px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .cardScalable {
+            position: relative;
+        }
+
+        .cardPadder {
+            padding-bottom: 56.25%;
+            position: relative;
+        }
+
+        .cardPadder-backdrop {
+            padding-bottom: 56.25%;
+        }
+
+        .cardContent {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+        }
+
+        .cardImageContainer {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .coveredImage {
+            background-size: cover;
+            background-position: center top;
+        }
+
+        .cardImageContainer img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top center;
+            display: block;
+        }
+
+        .cardFooter {
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.45);
+        }
+
+        .cardText {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: .82em;
+            line-height: 1.4;
+        }
+
+        .cardText-secondary {
+            opacity: .65;
+            font-size: .78em;
         }
 
         .skinManagerPage .card.selectedCard .cardBox {
             outline: 3px solid #00a4dc;
             outline-offset: -3px;
-            border-radius: 4px;
         }
 
         .skinManagerPage .activeBar {
@@ -37,6 +124,7 @@
         }
 
         .skinManagerPage .stateMsg {
+            width: 100%;
             padding: 3em 1em;
             text-align: center;
             opacity: .45;
@@ -86,9 +174,43 @@
                 </div>
 
 
-                <div id="themeGrid" class="itemsContainer vertical-wrap">
+                <div id="serverThemeNotice"
+                    style="display:none;margin-bottom:1em;padding:.75em 1em;background:rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.3);border-radius:6px;font-size:.85em;opacity:.85;">
+                    Server-wide theme selection is <strong>disabled</strong> while user themes are allowed.
+                    Users choose their own theme. Turn off the toggle below to set a server theme again.
+                </div>
+
+                <div id="themeGrid" class="itemsContainer vertical-wrap" style="transition:opacity .2s">
                     <div class="stateMsg">
                         Enter a repository URL above and click <strong>Load Themes</strong>.
+                    </div>
+                </div>
+
+
+                <div
+                    style="margin-top:1.5em;padding:1em;background:rgba(0,164,220,.07);border:1px solid rgba(0,164,220,.22);border-radius:6px;">
+                    <div style="display:flex;align-items:flex-start;gap:.75em;">
+                        <label
+                            style="position:relative;display:inline-block;width:40px;flex-shrink:0;height:22px;margin-top:2px;">
+                            <input type="checkbox" id="allowUserThemes"
+                                style="opacity:0;width:0;height:0;position:absolute;">
+                            <span id="allowUserThemesTrack"
+                                style="position:absolute;inset:0;border-radius:22px;background:rgba(255,255,255,.18);cursor:pointer;transition:background .2s;">
+                                <span id="allowUserThemesThumb"
+                                    style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.4);"></span>
+                            </span>
+                        </label>
+                        <div>
+                            <div style="font-weight:600;margin-bottom:.2em;">
+                                Allow users to choose their own theme
+                            </div>
+                            <div style="font-size:.8em;opacity:.55;line-height:1.4;">
+                                When enabled, a <em>My Theme</em> option appears in each user's
+                                Settings menu. Their choice overrides the server theme only for
+                                them, stored locally in their browser. Requires the manifest above
+                                to be saved.
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -120,6 +242,20 @@
 
                 function el(id) { return document.getElementById(id); }
 
+                function syncToggle(chk, checked) {
+                    chk.checked = checked;
+                    el('allowUserThemesTrack').style.background = checked ? '#00a4dc' : 'rgba(255,255,255,.18)';
+                    el('allowUserThemesThumb').style.transform = checked ? 'translateX(18px)' : '';
+                    el('serverThemeNotice').style.display = checked ? '' : 'none';
+                    el('themeGrid').style.opacity = checked ? '0.35' : '';
+                    el('themeGrid').style.pointerEvents = checked ? 'none' : '';
+                }
+                el('allowUserThemes').addEventListener('change', function () {
+                    syncToggle(this, this.checked);
+                    el('btnSave').disabled = false;
+                    updatePending();
+                });
+
                 function safeParseJson(str, fallback) {
                     try { return JSON.parse(str || '{}') || fallback; } catch (e) { return fallback; }
                 }
@@ -137,6 +273,7 @@
                             el('activeName').textContent = cfg.Skin;
                             el('activeBar').style.display = 'flex';
                         }
+                        syncToggle(el('allowUserThemes'), !!cfg.AllowUserThemes);
                         Dashboard.hideLoadingMsg();
                         updatePending();
                         var url = el('repoUrl').value.trim();
@@ -413,17 +550,21 @@
 
                 function doSave() {
 
-                    if (!state.selected && state.pendingVars === null) return;
+                    var allowUserThemesChanged = el('allowUserThemes').checked !== !!state.config.AllowUserThemes;
+                    var hasThemeChange = state.selected || state.pendingVars !== null;
+
+                    if (!hasThemeChange && !allowUserThemesChanged) return;
+
                     var theme = state.selected || state.active;
-                    if (!theme) return;
                     var vars = state.pendingVars !== null ? state.pendingVars : state.themeVars;
                     var cfg = Object.assign({}, state.config, {
                         SkinUrl: el('repoUrl').value.trim(),
-                        Skin: (theme.name || ""),
-                        SelectedCssUrl: (theme.cssUrl || "") || '',
-                        SelectedVersion: (theme.version || "") || '',
+                        Skin: theme ? (theme.name || '') : (state.config.Skin || ''),
+                        SelectedCssUrl: theme ? (theme.cssUrl || '') : (state.config.SelectedCssUrl || ''),
+                        SelectedVersion: theme ? (theme.version || '') : (state.config.SelectedVersion || ''),
                         ThemeVars: JSON.stringify(vars),
-                        HasConditionalImports: state.pendingHasAddons || false
+                        HasConditionalImports: theme ? (state.pendingHasAddons || false) : (state.config.HasConditionalImports || false),
+                        AllowUserThemes: el('allowUserThemes').checked
                     });
                     el('btnSave').disabled = true;
                     ApiClient.updatePluginConfiguration(PLUGIN_ID, cfg).then(function (result) {
