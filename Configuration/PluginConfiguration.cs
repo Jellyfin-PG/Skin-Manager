@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MediaBrowser.Model.Plugins;
 
 namespace Jellyfin.Plugin.SkinManager.Configuration
@@ -65,5 +66,11 @@ namespace Jellyfin.Plugin.SkinManager.Configuration
         /// CSS just to make a routing decision. Added in config version 4.
         /// </summary>
         public bool HasConditionalImports { get; set; } = false;
+
+        /// <summary>
+        /// Dynamic links (e.g. Google Fonts) to preconnect early for improved performance.
+        /// Stored per server-theme.
+        /// </summary>
+        public List<string> PreconnectUrls { get; set; } = new();
     }
 }

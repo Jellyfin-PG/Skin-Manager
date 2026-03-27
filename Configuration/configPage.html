@@ -531,12 +531,17 @@
 
                 function updatePending() {
                     var lbl = el('pendingLabel');
+                    var allowUserThemesChanged = el('allowUserThemes').checked !== !!state.config.AllowUserThemes;
+
                     if (state.selected) {
                         lbl.textContent = 'Pending: ' + state.selected.name;
                         lbl.style.color = '#00a4dc';
                     } else if (state.pendingVars !== null) {
                         var name = state.active ? state.active.name : 'theme';
                         lbl.textContent = 'Pending variable changes — ' + name;
+                        lbl.style.color = '#00a4dc';
+                    } else if (allowUserThemesChanged) {
+                        lbl.textContent = 'Pending: Settings changed';
                         lbl.style.color = '#00a4dc';
                     } else if (state.active) {
                         lbl.textContent = 'Active: ' + state.active.name;
@@ -564,6 +569,7 @@
                         SelectedVersion: theme ? (theme.version || '') : (state.config.SelectedVersion || ''),
                         ThemeVars: JSON.stringify(vars),
                         HasConditionalImports: theme ? (state.pendingHasAddons || false) : (state.config.HasConditionalImports || false),
+                        PreconnectUrls: theme ? (theme.preconnect || []) : (state.config.PreconnectUrls || []),
                         AllowUserThemes: el('allowUserThemes').checked
                     });
                     el('btnSave').disabled = true;

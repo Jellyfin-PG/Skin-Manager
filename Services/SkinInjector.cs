@@ -96,6 +96,7 @@ namespace Jellyfin.Plugin.SkinManager.Services
         public static void InvalidateInjectionCache()
         {
             lock (_injectionLock) { _cachedInjectionKey = null; }
+            ServerThemeCompiler.InvalidateCache();
         }
 
         private static string BuildInjection(PluginConfiguration config)
@@ -108,10 +109,6 @@ namespace Jellyfin.Plugin.SkinManager.Services
 
             if (skinActive)
             {
-                result += "<link rel=\"preconnect\" href=\"https://raw.githubusercontent.com\" crossorigin=\"anonymous\">\n";
-                result += "<link rel=\"preconnect\" href=\"https://cdn.jsdelivr.net\" crossorigin=\"anonymous\">\n";
-                result += "<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\" crossorigin=\"anonymous\">\n";
-                result += "<link rel=\"preconnect\" href=\"https://i.imgur.com\" crossorigin=\"anonymous\">\n";
                 result += BuildThemeGuardScript();
             }
 
@@ -119,165 +116,26 @@ namespace Jellyfin.Plugin.SkinManager.Services
                 && !string.IsNullOrWhiteSpace(config.SelectedCssUrl)
                 && config.SelectedCssUrl != "Default")
             {
-                result += $"<link rel=\"preload\" href=\"{config.SelectedCssUrl}\" as=\"style\" crossorigin=\"anonymous\">\n";
-
+                if (config.PreconnectUrls != null)
+                {
+                    foreach (var url in config.PreconnectUrls)
+                    {
+                        if (!string.IsNullOrWhiteSpace(url))
+                            result += $"<link rel=\"preconnect\" href=\"{EscapeJs(url.Trim())}\" crossorigin=\"anonymous\">\n";
+                    }
+                }
                 string varBlock = BuildCssVarBlock(config.ThemeVars);
-                string varJson = BuildVarsJson(config.ThemeVars);
-                string escapedUrl = EscapeJs(config.SelectedCssUrl);
                 string escapedVer = EscapeJs(config.SelectedVersion ?? string.Empty);
-                bool isRawGithub = config.SelectedCssUrl.Contains("raw.githubusercontent.com")
-                                 || config.SelectedCssUrl.Contains("gist.githubusercontent.com");
-                bool hasVars = !string.IsNullOrEmpty(varBlock);
-                bool hasAddons = config.HasConditionalImports;
+                string serverThemeUrl = $"/api/SkinManager/ServerTheme.css?v={escapedVer}";
 
-                if (hasVars)
+                result += $"<link rel=\"preload\" href=\"{serverThemeUrl}\" as=\"style\" crossorigin=\"anonymous\">\n";
+
+                if (!string.IsNullOrEmpty(varBlock))
                     result += $"<style id=\"skinmanager-vars\">\n{varBlock}</style>\n";
 
-                const string sharedFunctions = @"
-    function substituteVars(code, v) {
-        Object.keys(v).forEach(function(key) {
-            code = code.split('{{' + key + '}}').join(v[key]);
-        });
-        return code;
-    }
-
-    function resolveConditionalImports(code) {
-        var pattern = /\/\*\s*@sm-import-if\s+(\S+)\s+(\S+)\s*\*\//g;
-        var promises = [];
-        var match;
-        while ((match = pattern.exec(code)) !== null) {
-            (function(key, url) {
-                var enabled = vars[key];
-                if (enabled === 'true' || enabled === true) {
-                    promises.push(cachedFetch(url, CACHE_CSS));
-                } else {
-                    promises.push(Promise.resolve(''));
-                }
-            })(match[1], match[2]);
-        }
-        var stripped = code.replace(/\/\*\s*@sm-import-if\s+\S+\s+\S+\s*\*\//g, '');
-        return Promise.all(promises).then(function(addons) {
-            return stripped + '\n' + addons.join('\n');
-        });
-    }
-
-    function cachedFetch(url, cacheName) {
-        if (!window.caches) return fetch(url).then(function(r) { return r.text(); });
-        return caches.open(cacheName).then(function(cache) {
-            return cache.match(url).then(function(cached) {
-                var networkFetch = fetch(url).then(function(r) {
-                    cache.put(url, r.clone());
-                    return r.text();
-                }).catch(function() { return null; });
-                if (cached) { networkFetch.catch(function() {}); return cached.text(); }
-                return networkFetch.then(function(text) { return text || ''; });
-            });
-        });
-    }
-
-    function injectBlob(code) {
-        var existing = document.getElementById('skinmanager-theme');
-        if (existing) existing.remove();
-        var css = substituteVars(code, vars);
-        
-        var appendTarget = function(el) {
-            if (document.body) document.body.appendChild(el);
-            else document.addEventListener('DOMContentLoaded', function() { document.body.appendChild(el); });
-        };
-
-        try {
-            var blob = new Blob([css], { type: 'text/css' });
-            var link = document.createElement('link');
-            link.rel = 'stylesheet'; link.id = 'skinmanager-theme';
-            link.href = URL.createObjectURL(blob);
-            appendTarget(link);
-        } catch(e) {
-            var s = document.createElement('style');
-            s.id = 'skinmanager-theme';
-            s.textContent = css;
-            appendTarget(s);
-        }
-    }
-
-    function checkForUpdate() {
-        if (!repoUrl || !themeName) return;
-        fetch(repoUrl).then(function(r){return r.text();}).then(function(text) {
-            var themes; try { themes = JSON.parse(text); } catch(e) { return; }
-            var entry = themes.find(function(t) { return t.name === themeName; });
-            if (!entry || !entry.version || entry.version === themeVer) return;
-            console.log('[SkinManager] Update: ' + themeVer + ' -> ' + entry.version);
-            if (window.caches) caches.delete(CACHE_CSS);
-            ApiClient.getPluginConfiguration(pluginId).then(function(cfg) {
-                cfg.SelectedVersion = entry.version;
-                if (entry.cssUrl) cfg.SelectedCssUrl = entry.cssUrl;
-                return ApiClient.updatePluginConfiguration(pluginId, cfg);
-            }).then(function() { window.location.reload(); })
-              .catch(function(e) { console.warn('[SkinManager] Update save failed: ', e); });
-        }).catch(function() {});
-    }
-
-    function evictOldCaches() {
-        if (!window.caches) return;
-        caches.keys().then(function(keys) {
-            keys.forEach(function(key) {
-                if (key.startsWith('skinmanager-v') && key !== CACHE_CSS) caches.delete(key);
-            });
-        });
-    }
-";
-
-                string executionTail;
-                if (isRawGithub || hasVars || hasAddons)
-                {
-                    executionTail = @"
+                string scriptPayload = @"
     function isDashboard() { return new RegExp('^#/(dashboard|configurationpage|metadata)(/|[?]|$)').test(window.location.hash); }
     
-    function injectGlobalVars() {
-        if (!rawVars || document.getElementById('skinmanager-vars')) return;
-        var s = document.createElement('style');
-        s.id = 'skinmanager-vars';
-        s.textContent = rawVars;
-        if (document.body) document.body.appendChild(s);
-        else document.addEventListener('DOMContentLoaded', function() { document.body.appendChild(s); });
-    }
-
-    evictOldCaches(); checkForUpdate();
-    
-    if (isDashboard()) {
-        var v = document.getElementById('skinmanager-vars'); if (v) v.remove();
-    } else {
-        cachedFetch(cssUrl, CACHE_CSS)
-            .then(function(code) { return resolveConditionalImports(code); })
-            .then(function(code) { injectBlob(code); })
-            .catch(function(e) { console.warn('[SkinManager] Load failed: ' + cssUrl, e); });
-    }
-
-    function handleNavigationGithub() {
-        if (isDashboard()) {
-            var e = document.getElementById('skinmanager-theme'); if (e) e.remove();
-            var v = document.getElementById('skinmanager-vars');  if (v) v.remove();
-        } else if (!document.getElementById('skinmanager-theme')) {
-            injectGlobalVars();
-            cachedFetch(cssUrl, CACHE_CSS)
-                .then(function(code) { return resolveConditionalImports(code); })
-                .then(function(code) { injectBlob(code); })
-                .catch(function() {});
-        }
-    }
-
-    window.addEventListener('hashchange', handleNavigationGithub);
-    window.addEventListener('popstate', handleNavigationGithub);
-    
-    var origPush = history.pushState;
-    history.pushState = function() { origPush.apply(this, arguments); handleNavigationGithub(); };
-    var origReplace = history.replaceState;
-    history.replaceState = function() { origReplace.apply(this, arguments); handleNavigationGithub(); };
-";
-                }
-                else
-                {
-                    executionTail = @"
-    function isDashboard() { return new RegExp('^#/(dashboard|configurationpage|metadata)(/|[?]|$)').test(window.location.hash); }
     function injectDirectLink() {
         var existing = document.getElementById('skinmanager-theme');
         if (existing) existing.remove();
@@ -286,42 +144,74 @@ namespace Jellyfin.Plugin.SkinManager.Services
         if (document.body) document.body.appendChild(link);
         else document.addEventListener('DOMContentLoaded', function() { document.body.appendChild(link); });
     }
+
+    function injectGlobalVars() {
+        if (!rawVars || document.getElementById('skinmanager-vars')) return;
+        var s = document.createElement('style');
+        s.id = 'skinmanager-vars';
+        s.textContent = rawVars;
+        if (document.body) document.body.appendChild(s);
+        else document.addEventListener('DOMContentLoaded', function() { document.body.appendChild(s); });
+    }
     
-    evictOldCaches(); checkForUpdate();
+    function checkForUpdate() {
+        if (!repoUrl || !themeName) return;
+        fetch(repoUrl).then(function(r){return r.text();}).then(function(text) {
+            var themes; try { themes = JSON.parse(text); } catch(e) { return; }
+            var entry = themes.find(function(t) { return t.name === themeName; });
+            if (!entry || !entry.version || entry.version === themeVer) return;
+            console.log('[SkinManager] Update: ' + themeVer + ' -> ' + entry.version);
+            ApiClient.getPluginConfiguration(pluginId).then(function(cfg) {
+                if (window.caches) {
+                    caches.keys().then(function(keys) {
+                        keys.forEach(function(key) { if (key.startsWith('skinmanager-v')) caches.delete(key); });
+                    });
+                }
+                cfg.SelectedVersion = entry.version;
+                if (entry.cssUrl) cfg.SelectedCssUrl = entry.cssUrl;
+                return ApiClient.updatePluginConfiguration(pluginId, cfg);
+            }).then(function() { window.location.reload(); })
+              .catch(function(e) { console.warn('[SkinManager] Update save failed: ', e); });
+        }).catch(function() {});
+    }
+
+    checkForUpdate();
     
     if (isDashboard()) {
         var e = document.getElementById('skinmanager-theme'); if (e) e.remove();
+        var v = document.getElementById('skinmanager-vars');  if (v) v.remove();
     } else {
         injectDirectLink();
     }
 
-    function handleNavigationCDN() {
+    function handleNavigation() {
         if (isDashboard()) {
             var e = document.getElementById('skinmanager-theme'); if (e) e.remove();
-        } else if (!document.getElementById('skinmanager-theme')) { injectDirectLink(); }
+            var v = document.getElementById('skinmanager-vars');  if (v) v.remove();
+        } else {
+            injectGlobalVars();
+            if (!document.getElementById('skinmanager-theme')) { injectDirectLink(); }
+        }
     }
     
-    window.addEventListener('hashchange', handleNavigationCDN);
-    window.addEventListener('popstate', handleNavigationCDN);
+    window.addEventListener('hashchange', handleNavigation);
+    window.addEventListener('popstate', handleNavigation);
     
     var origPush = history.pushState;
-    history.pushState = function() { origPush.apply(this, arguments); handleNavigationCDN(); };
+    history.pushState = function() { origPush.apply(this, arguments); handleNavigation(); };
     var origReplace = history.replaceState;
-    history.replaceState = function() { origReplace.apply(this, arguments); handleNavigationCDN(); };
+    history.replaceState = function() { origReplace.apply(this, arguments); handleNavigation(); };
 ";
-                }
 
                 result += $@"<script id=""skinmanager-loader"">
 (function() {{
-    var cssUrl    = ""{escapedUrl}"";
+    var cssUrl    = ""{serverThemeUrl}"";
     var repoUrl   = ""{EscapeJs(config.SkinUrl)}"";
     var themeName = ""{EscapeJs(config.Skin)}"";
     var themeVer  = ""{escapedVer}"";
-    var vars      = {varJson};
     var rawVars   = ""{EscapeJs(varBlock)}"";
     var pluginId  = ""e10fb9d4-c941-4c6e-8260-2641031c2618"";
-    var CACHE_CSS  = 'skinmanager-v' + (themeVer || '0');
-{sharedFunctions}{executionTail}}})();
+{scriptPayload}}})();
 </script>
 ";
             }
@@ -576,11 +466,12 @@ namespace Jellyfin.Plugin.SkinManager.Services
     }
 
     function cachedFetch(url, cacheName) {
-        if (!window.caches) return fetch(url).then(function(r) { return r.text(); });
+        var pUrl = '/api/SkinManager/Resource?url=' + encodeURIComponent(url);
+        if (!window.caches) return fetch(pUrl).then(function(r) { return r.text(); });
         return caches.open(cacheName).then(function(cache) {
-            return cache.match(url).then(function(cached) {
-                var net = fetch(url).then(function(r) {
-                    cache.put(url, r.clone()); return r.text();
+            return cache.match(pUrl).then(function(cached) {
+                var net = fetch(pUrl).then(function(r) {
+                    cache.put(pUrl, r.clone()); return r.text();
                 }).catch(function() { return null; });
                 if (cached) { net.catch(function(){}); return cached.text(); }
                 return net.then(function(t) { return t || ''; });
@@ -597,7 +488,16 @@ namespace Jellyfin.Plugin.SkinManager.Services
         var cssUrl  = override.cssUrl  || '';
         var version = override.version || '0';
         var vars    = override.vars    || {};
+        var pConns  = override.preconnect || [];
         if (!cssUrl) return;
+
+        pConns.forEach(function(u) {
+            if (!u || document.head.querySelector('link[data-sm-preconnect=""'+u+'""]')) return;
+            var l = document.createElement('link');
+            l.rel = 'preconnect'; l.href = u; l.crossOrigin = 'anonymous';
+            l.setAttribute('data-sm-preconnect', u);
+            document.head.appendChild(l);
+        });
         
         var appendTarget = function(el) {
             if (document.body) document.body.appendChild(el);
