@@ -65,38 +65,40 @@ This file is fetched live, so new themes appear without a plugin update. To subm
 
 ## How it works
 
-When you select and save a theme, Skin Manager stores the CSS URL and any variable values in its configuration. On every request for `index.html`, the File Transformation plugin invokes a callback in Skin Manager which injects the following before `</body>`:
+When you select and save a theme, Skin Manager stores the configuration. On every request for `index.html`, the File Transformation plugin invokes a callback in Skin Manager which dynamically injects styling logic into the page:
 
-* A `<style>` block containing a `:root { }` declaration with the user's variable values as CSS custom properties, if any variables are configured
-* A `<style>` block with an `@import` pointing to the selected theme's CSS
+* **Server Themes**: Skin Manager downloads the theme (and any enabled addons), strips out conditional logic, substitutes your customized variables in C#, and caches the fully compiled result to the local Jellyfin disk. It then injects a minimal stylesheet block pointing directly to a local offline API endpoint.
+* **User Themes**: If enabled, users can select a personal theme from their individual settings menu. Their choices are saved inside their browser's local storage. Skin Manager injects a lightweight javascript payload that fetches the raw CSS from the server's local disk cache proxy, performs variable substitutions client-side, and injects the resulting stylesheet instantly.
 
-The `:root` block is injected in a separate tag before the `@import` so the imported stylesheet can reference the custom properties via `var()`. The original files on disk are never touched.
+In both paradigms, the original files on disk are never touched, and unreliable external CDN network requests are completely eliminated after the initial server-side cache download.
 
 Removing a theme clears the stored URL and variables. The next page load returns to the default Jellyfin stylesheet.
 
 ## Changelog
 
-**1.4.2** — Preconnect for google fonts and imgur images.
+**1.5.0** — **Offline Disk Proxy & Dynamic Networking**. Themes and addons are now downloaded and cached directly to your Jellyfin server's disk upon first load. Both Server and User themes are routed locally, rendering them completely immune to external CDN timeouts/outages and drastically improving startup times. Added dynamic preconnect injections for enhanced asset loading waterfalls.
 
-**1.4.1** — Preloading stylesheets, fixes and ordering optimization.
+**1.4.2** — **Resource Preconnecting**. Injected dynamic preconnect headers for frequently accessed assets like Google Fonts and Imgur images to speed up external asset resolution.
 
-**1.4.0** — Introduction of user skins.
+**1.4.1** — **Preload Optimizations**. Reordered stylesheet injection logic and implemented native `<link rel="preload">` to prevent UI flickering while themes download.
 
-**1.3.4-7** — Fixes. Minor quality of life fixes.
+**1.4.0** — **Per-User Themes**. Administrators can now grant users the ability to override the global server theme and select their own localized skin from their Jellyfin settings menu.
 
-**1.3.3** — CDN and Gradients. Changes for CDN based themes where possible, and gradient options with theme creators having control on where to use them.
+**1.3.4-1.3.7** — **Stability & Quality of Life**. Various minor bug fixes and user experience refinements across the plugin ecosystem.
 
-**1.3.2** — Cache Fixes. Fixes for cache eviction on theme switching.
+**1.3.3** — **CDN Migration & CSS Gradients**. Shifted target CDN endpoints for increased reliability and introduced dynamic gradient configuration bindings for theme creators.
 
-**1.3.1** — Speed Improvement. Improvements for url checking and injection.
+**1.3.2** — **Cache Invalidation Fixes**. Resolved edge-cases regarding stale cache persisting when rapidly switching between multiple server themes.
 
-**1.3.0** — Skin versions, Cache and Css addons. Introduces functional skin versions, with browser cache for faster loading and proper version checking to pull newer updates, also includes css addons, with variables to allow people to choose what they want with the theme.
+**1.3.1** — **Injection Performance Tuning**. Optimized URL verification and drastically trimmed the computational overhead during CSS payload injection.
 
-**1.2.1** — Fixes. Fixes for injection, versioning of the plugin, and different configuration versions.
+**1.3.0** — **Theme Versioning & Addon Engine**. Implemented intelligent browser cache routing alongside semantic theme version tracking. Introduced the conditional addon engine, empowering users to compile modular stylesheets via variable toggles.
 
-**1.2.0** — Theme variables. Themes can now declare configurable CSS custom properties. Users can set values from the Skin Manager settings page without editing CSS.
+**1.2.1** — **Architecture Fixes**. Addressed bugs surrounding dynamic CSS injection, internal plugin version mismatches, and configuration upgrade schemas.
 
-**1.0.0** — Initial release.
+**1.2.0** — **Dynamic Theme Variables**. Engineered a realtime properties engine allowing themes to declare user-facing inputs on the Skin Manager dashboard. Users can configure variables like accent colors directly within the Jellyfin UI without touching CSS.
+
+**1.0.0** — **Initial Release**. The foundation of Skin Manager.
 
 ## License
 
