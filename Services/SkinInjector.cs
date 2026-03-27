@@ -128,7 +128,7 @@ namespace Jellyfin.Plugin.SkinManager.Services
                 string escapedVer = EscapeJs(config.SelectedVersion ?? string.Empty);
                 string serverThemeUrl = $"/api/SkinManager/ServerTheme.css?v={escapedVer}";
 
-                result += $"<link rel=\"preload\" href=\"{serverThemeUrl}\" as=\"style\" crossorigin=\"anonymous\">\n";
+                result += $"<link rel=\"preload\" href=\"{serverThemeUrl}\" as=\"style\">\n";
 
                 if (!string.IsNullOrEmpty(varBlock))
                     result += $"<style id=\"skinmanager-vars\">\n{varBlock}</style>\n";

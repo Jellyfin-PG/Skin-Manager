@@ -76,6 +76,8 @@ Removing a theme clears the stored URL and variables. The next page load returns
 
 ## Changelog
 
+**1.5.2** — **Preload Cross-Origin Normalization**. Removed legacy CDN `crossorigin="anonymous"` preload declarations, correctly synchronizing HTTP request credential models with natively proxied `.NET` Server Theme endpoints beneath strict Cloudflare/Reverse-Proxy tunnels.
+
 **1.5.1** — **Version-Bound Cache Matrix**. Resolved static cache evasion by natively binding the offline disk proxy cache hashes directly to semantic JSON version strings ensuring automatic invalidation. Secured all frontend UI API config testing by rerouting them through the internal `.NET` backend. Implemented an explicit `Clear Offline Cache` manual override button securely authorized within the admin dashboard.
 
 **1.5.0** — **Offline Disk Proxy & Dynamic Networking**. Themes and addons are now downloaded and cached directly to your Jellyfin server's disk upon first load. Both Server and User themes are routed locally, rendering them completely immune to external CDN timeouts/outages and drastically improving startup times. Added dynamic preconnect injections for enhanced asset loading waterfalls.
