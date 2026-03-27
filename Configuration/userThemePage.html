@@ -743,7 +743,8 @@
                         name: theme.name || '',
                         cssUrl: theme.cssUrl || '',
                         version: theme.version || '',
-                        vars: vars || {}
+                        vars: vars || {},
+                        preconnect: theme.preconnect || []
                     };
                     localStorage.setItem(getLsKey(), JSON.stringify(override));
 

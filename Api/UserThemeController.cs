@@ -3,6 +3,8 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Jellyfin.Plugin.SkinManager.Services;
 
 namespace Jellyfin.Plugin.SkinManager.Api
 {
@@ -19,6 +21,12 @@ namespace Jellyfin.Plugin.SkinManager.Api
         // Cached once at first request — the embedded HTML never changes between restarts.
         private static byte[] _pageBytes;
         private static readonly object _pageLock = new();
+        private readonly ILogger<UserThemeController> _logger;
+
+        public UserThemeController(ILogger<UserThemeController> logger)
+        {
+            _logger = logger;
+        }
 
         /// <summary>
         /// Returns the manifest URL configured by the admin and whether
@@ -41,6 +49,29 @@ namespace Jellyfin.Plugin.SkinManager.Api
         }
 
         /// <summary>
+        /// Serves the fully compiled, optimized Server Skin.
+        /// Variable substitution and addons are pre-processed by the backend.
+        /// </summary>
+        [HttpGet("ServerTheme.css")]
+        [AllowAnonymous]
+        [Produces("text/css")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async System.Threading.Tasks.Task<IActionResult> GetServerThemeCss()
+        {
+            var config = Plugin.Instance?.Configuration;
+            if (config == null || string.IsNullOrWhiteSpace(config.SelectedCssUrl) || config.SelectedCssUrl == "Default" || config.AllowUserThemes)
+            {
+                return Content(string.Empty, "text/css; charset=utf-8");
+            }
+
+            string compiledCss = await ServerThemeCompiler.GetCompiledThemeAsync(config, _logger);
+
+            Response.Headers.Append("Cache-Control", "public, max-age=3600");
+            
+            return Content(compiledCss, "text/css; charset=utf-8");
+        }
+
+        /// <summary>
         /// Serves the user theme picker page as a standalone HTML document.
         /// Open to any visitor — the page HTML is not sensitive; all data
         /// it fetches internally still requires authentication via authHeaders().
@@ -57,6 +88,25 @@ namespace Jellyfin.Plugin.SkinManager.Api
                 return NotFound();
 
             return File(bytes, "text/html");
+        }
+
+        /// <summary>
+        /// Proxies external CSS requests (User Themes and Addons) through the server's
+        /// local disk cache, preventing CDN timeouts and offline breakages.
+        /// </summary>
+        [HttpGet("Resource")]
+        [AllowAnonymous]
+        [Produces("text/css")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async System.Threading.Tasks.Task<IActionResult> GetResource([FromQuery] string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+                return Content(string.Empty, "text/css; charset=utf-8");
+
+            string css = await SkinResourceProxy.GetResourceAsync(url, _logger);
+            
+            Response.Headers.Append("Cache-Control", "public, max-age=3600");
+            return Content(css, "text/css; charset=utf-8");
         }
 
         private static byte[] GetPageBytes()
