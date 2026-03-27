@@ -18,7 +18,6 @@ namespace Jellyfin.Plugin.SkinManager.Api
     [Route("api/SkinManager")]
     public class UserThemeController : ControllerBase
     {
-        // Cached once at first request — the embedded HTML never changes between restarts.
         private static byte[] _pageBytes;
         private static readonly object _pageLock = new();
         private readonly ILogger<UserThemeController> _logger;
@@ -98,15 +97,28 @@ namespace Jellyfin.Plugin.SkinManager.Api
         [AllowAnonymous]
         [Produces("text/css")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async System.Threading.Tasks.Task<IActionResult> GetResource([FromQuery] string url)
+        public async System.Threading.Tasks.Task<IActionResult> GetResource([FromQuery] string url, [FromQuery] string v = null)
         {
             if (string.IsNullOrWhiteSpace(url))
                 return Content(string.Empty, "text/css; charset=utf-8");
 
-            string css = await SkinResourceProxy.GetResourceAsync(url, _logger);
+            string css = await SkinResourceProxy.GetResourceAsync(url, v, _logger);
             
             Response.Headers.Append("Cache-Control", "public, max-age=3600");
             return Content(css, "text/css; charset=utf-8");
+        }
+
+        /// <summary>
+        /// Instantly clears all externally downloaded CSS files from the server's
+        /// internal proxy disk cache. Requires an authenticated session.
+        /// </summary>
+        [HttpPost("ClearCache")]
+        [Authorize(Policy = "DefaultAuthorization")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult ClearCache()
+        {
+            SkinResourceProxy.ClearCache();
+            return Ok();
         }
 
         private static byte[] GetPageBytes()

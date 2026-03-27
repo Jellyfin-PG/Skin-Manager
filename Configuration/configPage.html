@@ -217,6 +217,11 @@
 
                 <div style="margin-top:1.5em;display:flex;align-items:center;gap:1em;flex-wrap:wrap">
                     <span id="pendingLabel" style="font-size:.85em;opacity:.6">No pending changes</span>
+                    
+                    <button is="emby-button" type="button" id="btnClearCache" class="raised emby-button" style="margin-left:auto;background:rgba(220,53,69,0.15);color:#ff5252;border:1px solid rgba(220,53,69,0.3);">
+                        Clear Offline Cache
+                    </button>
+
                     <button is="emby-button" type="button" id="btnSave" class="raised button-submit emby-button"
                         disabled>
                         Save &amp; Apply
@@ -517,7 +522,7 @@
 
 
                     if ((theme.cssUrl || "")) {
-                        fetch((theme.cssUrl || ""))
+                        fetch('/api/SkinManager/Resource?url=' + encodeURIComponent(theme.cssUrl) + '&v=' + encodeURIComponent(theme.version || ''))
                             .then(function (r) { return r.text(); })
                             .then(function (text) {
                                 state.pendingHasAddons = /@sm-import-if/.test(text);
@@ -1030,6 +1035,25 @@
                 el('searchInput').addEventListener('input', function () {
                     state.query = this.value;
                     render();
+                });
+
+                el('btnClearCache').addEventListener('click', function () {
+                    var btn = this;
+                    btn.disabled = true;
+                    var originalText = btn.textContent;
+                    btn.textContent = 'Clearing...';
+                    ApiClient.fetch({ url: ApiClient.getUrl('SkinManager/ClearCache'), method: 'POST' })
+                        .then(function () {
+                            Dashboard.alert('Offline CSS cache cleared successfully.');
+                        })
+                        .catch(function (err) {
+                            console.error(err);
+                            Dashboard.alert('Failed to clear offline cache. See browser console.');
+                        })
+                        .finally(function () {
+                            btn.disabled = false;
+                            btn.textContent = originalText;
+                        });
                 });
 
                 el('btnSave').addEventListener('click', doSave);

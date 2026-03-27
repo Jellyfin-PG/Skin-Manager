@@ -48,7 +48,7 @@ namespace Jellyfin.Plugin.SkinManager.Services
             }
         }
 
-        public static async Task<string> GetResourceAsync(string url, ILogger logger = null)
+        public static async Task<string> GetResourceAsync(string url, string version = null, ILogger logger = null)
         {
             if (string.IsNullOrWhiteSpace(url)) return string.Empty;
 
@@ -61,7 +61,7 @@ namespace Jellyfin.Plugin.SkinManager.Services
                     Directory.CreateDirectory(cacheDir);
                 }
 
-                string hash = GetHashString(url);
+                string hash = GetHashString(url + "|" + (version ?? "0"));
                 string filePath = Path.Combine(cacheDir, hash + ".css");
 
                 if (File.Exists(filePath))
@@ -109,7 +109,10 @@ namespace Jellyfin.Plugin.SkinManager.Services
                 string cacheDir = Path.Combine(dataPath, "Cache");
                 if (Directory.Exists(cacheDir))
                 {
-                    Directory.Delete(cacheDir, true);
+                    foreach (string file in Directory.GetFiles(cacheDir, "*.css", SearchOption.AllDirectories))
+                    {
+                        try { File.Delete(file); } catch { }
+                    }
                 }
             }
             catch { }

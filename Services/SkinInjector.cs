@@ -465,8 +465,8 @@ namespace Jellyfin.Plugin.SkinManager.Services
         });
     }
 
-    function cachedFetch(url, cacheName) {
-        var pUrl = '/api/SkinManager/Resource?url=' + encodeURIComponent(url);
+    function cachedFetch(url, cacheName, version) {
+        var pUrl = '/api/SkinManager/Resource?url=' + encodeURIComponent(url) + '&v=' + encodeURIComponent(version || '');
         if (!window.caches) return fetch(pUrl).then(function(r) { return r.text(); });
         return caches.open(cacheName).then(function(cache) {
             return cache.match(pUrl).then(function(cached) {
@@ -517,7 +517,7 @@ namespace Jellyfin.Plugin.SkinManager.Services
             appendTarget(styleEl); 
         }
         var epoch = _injectEpoch;
-        cachedFetch(cssUrl, CACHE_CSS + version).then(function(code) {
+        cachedFetch(cssUrl, CACHE_CSS + version, version).then(function(code) {
             if (_injectEpoch !== epoch) return;
             code = substituteVars(code, vars);
             var existing = document.getElementById('skinmanager-user-theme');
