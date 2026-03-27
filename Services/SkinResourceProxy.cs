@@ -61,7 +61,6 @@ namespace Jellyfin.Plugin.SkinManager.Services
                     Directory.CreateDirectory(cacheDir);
                 }
 
-                // If version is null/empty, fallback to "0". Hash effectively forces a cache miss on version bumps.
                 string hash = GetHashString(url + "|" + (version ?? "0"));
                 string filePath = Path.Combine(cacheDir, hash + ".css");
 
@@ -110,7 +109,10 @@ namespace Jellyfin.Plugin.SkinManager.Services
                 string cacheDir = Path.Combine(dataPath, "Cache");
                 if (Directory.Exists(cacheDir))
                 {
-                    Directory.Delete(cacheDir, true);
+                    foreach (string file in Directory.GetFiles(cacheDir, "*.css", SearchOption.AllDirectories))
+                    {
+                        try { File.Delete(file); } catch { }
+                    }
                 }
             }
             catch { }
