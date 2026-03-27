@@ -706,7 +706,7 @@
                     state.selected = theme;
                     state.pendingHasAddons = false;
                     if (theme.cssUrl) {
-                        fetch(theme.cssUrl).then(function (r) { return r.text(); }).then(function (text) {
+                        fetch('/api/SkinManager/Resource?url=' + encodeURIComponent(theme.cssUrl) + '&v=' + encodeURIComponent(theme.version || '')).then(function (r) { return r.text(); }).then(function (text) {
                             state.pendingHasAddons = /@sm-import-if/.test(text);
                         }).catch(function () { });
                     }
@@ -790,12 +790,13 @@
                     return code;
                 }
 
-                function cachedFetch(url, cacheName) {
-                    if (!window.caches) return fetch(url).then(function (r) { return r.text(); });
+                function cachedFetch(url, cacheName, version) {
+                    var pUrl = '/api/SkinManager/Resource?url=' + encodeURIComponent(url) + '&v=' + encodeURIComponent(version || '');
+                    if (!window.caches) return fetch(pUrl).then(function (r) { return r.text(); });
                     return caches.open(cacheName).then(function (cache) {
-                        return cache.match(url).then(function (cached) {
-                            var net = fetch(url).then(function (r) {
-                                cache.put(url, r.clone()); return r.text();
+                        return cache.match(pUrl).then(function (cached) {
+                            var net = fetch(pUrl).then(function (r) {
+                                cache.put(pUrl, r.clone()); return r.text();
                             }).catch(function () { return null; });
                             if (cached) { net.catch(function () { }); return cached.text(); }
                             return net.then(function (t) { return t || ''; });
@@ -829,7 +830,7 @@
 
                     if (!cssUrl) return;
 
-                    cachedFetch(cssUrl, CACHE_CSS + version).then(function (code) {
+                    cachedFetch(cssUrl, CACHE_CSS + version, version).then(function (code) {
                         code = substituteVars(code, vars);
                         var existing = document.getElementById('skinmanager-user-theme');
                         if (existing) existing.remove();

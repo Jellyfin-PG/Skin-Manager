@@ -517,7 +517,7 @@
 
 
                     if ((theme.cssUrl || "")) {
-                        fetch((theme.cssUrl || ""))
+                        fetch('/api/SkinManager/Resource?url=' + encodeURIComponent(theme.cssUrl) + '&v=' + encodeURIComponent(theme.version || ''))
                             .then(function (r) { return r.text(); })
                             .then(function (text) {
                                 state.pendingHasAddons = /@sm-import-if/.test(text);

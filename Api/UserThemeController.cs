@@ -98,12 +98,12 @@ namespace Jellyfin.Plugin.SkinManager.Api
         [AllowAnonymous]
         [Produces("text/css")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async System.Threading.Tasks.Task<IActionResult> GetResource([FromQuery] string url)
+        public async System.Threading.Tasks.Task<IActionResult> GetResource([FromQuery] string url, [FromQuery] string v = null)
         {
             if (string.IsNullOrWhiteSpace(url))
                 return Content(string.Empty, "text/css; charset=utf-8");
 
-            string css = await SkinResourceProxy.GetResourceAsync(url, _logger);
+            string css = await SkinResourceProxy.GetResourceAsync(url, v, _logger);
             
             Response.Headers.Append("Cache-Control", "public, max-age=3600");
             return Content(css, "text/css; charset=utf-8");

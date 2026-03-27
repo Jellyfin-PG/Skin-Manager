@@ -48,7 +48,7 @@ namespace Jellyfin.Plugin.SkinManager.Services
             }
         }
 
-        public static async Task<string> GetResourceAsync(string url, ILogger logger = null)
+        public static async Task<string> GetResourceAsync(string url, string version = null, ILogger logger = null)
         {
             if (string.IsNullOrWhiteSpace(url)) return string.Empty;
 
@@ -61,7 +61,8 @@ namespace Jellyfin.Plugin.SkinManager.Services
                     Directory.CreateDirectory(cacheDir);
                 }
 
-                string hash = GetHashString(url);
+                // If version is null/empty, fallback to "0". Hash effectively forces a cache miss on version bumps.
+                string hash = GetHashString(url + "|" + (version ?? "0"));
                 string filePath = Path.Combine(cacheDir, hash + ".css");
 
                 if (File.Exists(filePath))

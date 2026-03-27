@@ -56,7 +56,7 @@ namespace Jellyfin.Plugin.SkinManager.Services
 
             try
             {
-                resultCss = await SkinResourceProxy.GetResourceAsync(config.SelectedCssUrl, logger);
+                resultCss = await SkinResourceProxy.GetResourceAsync(config.SelectedCssUrl, config.SelectedVersion, logger);
                 if (string.IsNullOrEmpty(resultCss))
                 {
                     logger?.LogWarning("[SkinManager] Failed to fetch server theme CSS from proxy. Url: {Url}", config.SelectedCssUrl);
@@ -102,7 +102,7 @@ namespace Jellyfin.Plugin.SkinManager.Services
                         {
                             try
                             {
-                                string addonCss = await SkinResourceProxy.GetResourceAsync(url, logger);
+                                string addonCss = await SkinResourceProxy.GetResourceAsync(url, config.SelectedVersion, logger);
                                 if (!string.IsNullOrEmpty(addonCss))
                                 {
                                     addonChunks.Add(addonCss);
