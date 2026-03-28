@@ -75,6 +75,8 @@ In both paradigms, the original files on disk are never touched, and unreliable 
 Removing a theme clears the stored URL and variables. The next page load returns to the default Jellyfin stylesheet.
 
 ## Changelog
+ 
+**1.5.3** — **UI Stability & Fallback Reliability**. Implemented synchronous variable injection to eliminate color flashing on page refresh. Refined `isDashboard` exclusion zones to protect User Preferences and Setup Wizard UI. Added automatic Server Theme fallback for users without a personal selection. Resolved a critical `InvalidOperationException` in the cache-clearing API by moving to manual administrator authorization.
 
 **1.5.2** — **Preload Cross-Origin Normalization**. Removed legacy CDN `crossorigin="anonymous"` preload declarations, correctly synchronizing HTTP request credential models with natively proxied `.NET` Server Theme endpoints beneath strict Cloudflare/Reverse-Proxy tunnels.
 
