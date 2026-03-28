@@ -1042,7 +1042,7 @@
                     btn.disabled = true;
                     var originalText = btn.textContent;
                     btn.textContent = 'Clearing...';
-                    ApiClient.fetch({ url: ApiClient.getUrl('SkinManager/ClearCache'), method: 'POST' })
+                    ApiClient.fetch({ url: ApiClient.getUrl('api/SkinManager/ClearCache'), type: 'POST', method: 'POST' })
                         .then(function () {
                             Dashboard.alert('Offline CSS cache cleared successfully.');
                         })

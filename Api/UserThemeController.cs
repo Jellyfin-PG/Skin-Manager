@@ -1,5 +1,5 @@
-using System.IO;
 using System.ComponentModel.DataAnnotations;
+using MediaBrowser.Common.Api;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +18,7 @@ namespace Jellyfin.Plugin.SkinManager.Api
     [Route("api/SkinManager")]
     public class UserThemeController : ControllerBase
     {
-        private static byte[] _pageBytes;
+        private static volatile byte[] _pageBytes;
         private static readonly object _pageLock = new();
         private readonly ILogger<UserThemeController> _logger;
 
@@ -110,10 +110,10 @@ namespace Jellyfin.Plugin.SkinManager.Api
 
         /// <summary>
         /// Instantly clears all externally downloaded CSS files from the server's
-        /// internal proxy disk cache. Requires an authenticated session.
+        /// internal proxy disk cache. Requires an admin session.
         /// </summary>
         [HttpPost("ClearCache")]
-        [Authorize(Policy = "DefaultAuthorization")]
+        [Authorize(Policy = Policies.RequiresElevation)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult ClearCache()
         {
