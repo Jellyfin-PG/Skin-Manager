@@ -1,6 +1,8 @@
 ![Build Status](https://img.shields.io/github/actions/workflow/status/Jellyfin-PG/Skin-Manager/release.yml)
 ![License](https://img.shields.io/github/license/Jellyfin-PG/Skin-Manager)
 
+# Still works for any version of jellyfin 10.11.x, and also for the most recent versions of file transformation, however all work has been moved to [Jellyframe](https://github.com/Jellyfin-PG/JellyFrame)
+
 <div align="center">
   <img src="assets/skinmanager.svg" alt="Skin Manager Logo" width="120" />
   <h1>Skin Manager</h1>
